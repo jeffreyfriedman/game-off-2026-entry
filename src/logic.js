@@ -23,7 +23,7 @@
         '18:40. Fog coming in off the water, thick. Took the lamp down to the gate.',
         'No fog bell rung before the crossing. Gate opened on my own judgment.',
         'The courier Pell asked to cross with the mail cart and took the risk on his own head. Gate opened for him, cart away over the causeway.',
-        '20:15. The courier\'s horse came back alone, harness on, traces cut. No sign of the cart. No sign of the boy.',
+        '20:15. The courier\'s mare came back alone, harness on, traces cut clean. No sign of the cart. No sign of the boy.',
         'Fog still down at shift\'s end. Night keeper to write the outgoing log for the auditors at dawn.'
       ]
     },
@@ -42,8 +42,18 @@
       keeper: 'The gate tally, kept by whoever works the gate. Every opening gets a mark.',
       lines: [
         'Tuesday, the night before last: carts over, 3. Log entries for Tuesday crossings: 2.',
+        'One cart crossed Tuesday that the day log never names. Unexplained counts have a way of mattering at dawn.',
         'Today: gate opened 19:05, one cart, mail. Horse returned alone 20:15.',
         'No other openings today. The gate has not moved since.'
+      ]
+    },
+    routecard: {
+      title: 'Pell\'s route card',
+      keeper: 'Left in the desk drawer from his last dry run, in Pell\'s own hand.',
+      lines: [
+        'North road, out and back. Stones to the far rail: two hundred and six. I count them when the fog is in, so the horse does not have to think.',
+        'If the fog comes down, wait it out. A late cart is a whole cart. A cart in the mud is neither.',
+        'Mum\'s birthday is the 9th. Flowers from the far side if the bonus lands. Do not let her say she does not want any.'
       ]
     }
   };
@@ -62,7 +72,7 @@
       lines: [
         { who: 'narr', text: 'Kestrel Gate, on the north road out of the Reach. One gate, one causeway, one rule: no crossing after the fog bell, until the fog lifts.' },
         { who: 'narr', text: 'This afternoon the fog came in early. The day keeper opened the gate anyway and let a courier cross with the mail cart. The horse came back alone.' },
-        { who: 'narr', text: 'The auditors come at dawn. They want the outgoing log, written by the night keeper. That is you. What you write decides who carries it.' },
+        { who: 'narr', text: 'The auditors come at dawn. They want the outgoing log, written by the night keeper. That is you. What you write decides who carries the blame.' },
         { who: 'narr', text: 'One night. About twenty minutes. Everything you need is on the desk or at the gate.' }
       ]
     },
@@ -70,8 +80,9 @@
     desk: {
       type: 'desk', next: 'w1_intro',
       intro: [
-        { who: 'narr', text: 'The gatehouse is warm and smells of lamp oil. On the desk: the day log, a weather note, and the tally sheet.' },
-        { who: 'narr', text: 'A keeper reads before he does anything else. Read the day log first. The other two will still be here all night, and you can come back to any of them whenever you like.' }
+        { who: 'narr', text: 'The gatehouse is warm and smells of lamp oil. A bucket by the door catches the roof leak, steady as a clock. The office has been promising a repair since spring.' },
+        { who: 'narr', text: 'On the desk: the day log, a weather note, and the tally sheet. In the drawer, the route card Pell left from his last dry run. You have taken this desk from Anselm Rook for six years. His hand is in every book in the room.' },
+        { who: 'narr', text: 'Read before you do anything else. Read the day log first. The other two will still be here all night, and you can come back to any of them whenever you like. And hear people out tonight: at dawn you can only write an account you actually hold.' }
       ]
     },
 
@@ -87,8 +98,9 @@
       type: 'choice', next: 'w1_gate',
       intro: [
         { who: 'narr', text: 'A young woman stands in the fog with a lantern and no coat. Maren, the courier\'s sister. Half the Reach knows her by sight.' },
-        { who: 'maren', text: 'You are the night keeper. They said the night keeper would know. My brother went over this afternoon and his horse came back without him.' },
-        { who: 'narr', text: 'A keeper learns what the log leaves out by asking. Ask her what you need to know.' }
+        { who: 'maren', text: 'You\'re the night keeper. They said you\'d know. My brother went over this afternoon and his horse came back without him.' },
+        { who: 'narr', text: 'A keeper learns what the log leaves out by asking. Ask her what you need to know.' },
+        { who: 'maren', text: 'And when we\'ve talked, I\'m asking you to let me over. I know the causeway stones by count and I have a lantern.' }
       ],
       options: [
         {
@@ -96,12 +108,12 @@
           sets: ['heard_maren'],
           lines: [
             { who: 'maren', text: 'Pell is nineteen. He has run the mail since he was fifteen and he is careful, whatever the day log says. He is afraid of that causeway in fog. All the couriers are. You can hear the water under it and you cannot see your own horse\'s head.' },
-            { who: 'maren', text: 'He would not ask to cross in fog. I am telling you that first because the log will tell you different, and the log is wrong.' }
+            { who: 'maren', text: 'He would not ask to cross in fog. I\'m telling you that first because the log will tell you different, and the log is wrong. He owed Vane money, keeper. That hangs over all of it.' }
           ]
         },
         {
           id: 'maren_debt', kind: 'ask', label: 'Ask about the debt',
-          sets: ['heard_debt'],
+          requires: 'heard_maren', sets: ['heard_debt'],
           lines: [
             { who: 'maren', text: 'He owes Vane money. Cards, if you can believe it, a boy who never had two coins to knock together. Vane has been patient about it in the way that costs more later.' },
             { who: 'maren', text: 'Today\'s run carried a bonus. Far-side delivery before dark pays double. It would have cleared him. I told him the fog would take the bonus and maybe him with it. He said Vane\'s patience was worse than fog.' }
@@ -111,7 +123,7 @@
           id: 'maren_horse', kind: 'ask', label: 'Ask about the horse',
           sets: ['heard_horse'],
           lines: [
-            { who: 'maren', text: 'The horse came back with its harness on and the traces cut clean. A horse does not cut its own traces, keeper.' },
+            { who: 'maren', text: 'The mare came back with her harness on and the traces cut clean. A horse does not cut its own traces, keeper.' },
             { who: 'maren', text: 'Either the cart went over and Pell cut her free so she would not go with it, or somebody else held a knife out there. I know which one I can live with. I am going to find out which one is true.' }
           ]
         },
@@ -178,7 +190,7 @@
           sets: ['sella_causeway'],
           lines: [
             { who: 'sella', text: 'The causeway floods at the far end first, by the broken rail. A cart that leaves the stones there goes into the mud and the tide does the rest. If the boy got that far, the cart is in the mud and he cut the horse free to save her.' },
-            { who: 'sella', text: 'If he did not get that far, then he turned back into the fog and the fog kept him. I have rung for this road forty years. The fog does not give back what it takes in the same shape it took it.' }
+            { who: 'sella', text: 'If he did not get that far, then he turned back into the fog and the fog kept him. I have rung for this road forty years. Nobody the fog takes comes back in the shape they left in.' }
           ]
         },
         {
@@ -208,7 +220,7 @@
           id: 'vane_debt', kind: 'ask', label: 'Ask about Pell\'s debt',
           sets: ['heard_vane'],
           lines: [
-            { who: 'vane', text: 'The boy owed me, yes. I carried him longer than most would. Cards. They all owe for cards in the end.' },
+            { who: 'vane', text: 'The boy owed me, yes. I carried him longer than most would. Cards. Half the couriers on this road owe me for cards, and the boy owed longest.' },
             { who: 'vane', text: 'But hear me, keeper. Today\'s bonus would have cleared him whole. He knew it. He begged Rook for that gate, begged like a man who could see the far side of his troubles. Whatever Rook wrote about the asking, that much is gospel.' }
           ]
         },
@@ -221,11 +233,11 @@
           ]
         },
         {
-          id: 'vane_tally', kind: 'ask', label: 'Ask about the night before last',
+          id: 'vane_tally', kind: 'ask', label: 'Ask about the unlogged cart on Tuesday',
           requires: 'read_tally', sets: ['vane_confronted'],
           lines: [
             { who: 'narr', text: 'His hands stop moving. That is the whole answer, and he knows you saw it.' },
-            { who: 'vane', text: 'The tally sheet. Yes. Rook keeps a tidy sheet, I will give him that. One cart, keeper, one time, and a consideration paid for the quiet of it. These things are done between keepers and carters since before you had the coat.' },
+            { who: 'vane', text: 'The tally sheet. Yes. Rook keeps a tidy sheet, I will give him that. One cart, keeper, one time, and money paid to keep it out of the log. These things are done between keepers and carters since before you had the coat.' },
             { who: 'vane', text: 'I am not confessing to your book. I am telling you the road runs on favors, and a log that says so will make enemies of everyone who keeps it running. Write what you like. Write it knowing that.' }
           ]
         },
@@ -241,7 +253,8 @@
     w3_gate: {
       type: 'gate', gate: 'vane', next: 'w4_intro',
       intro: [
-        { who: 'narr', text: 'His cart stands loaded in the fog, horse stamping. The rule is the same rule it was at the first watch. The man is not the same man.' }
+        { who: 'narr', text: 'His cart stands loaded in the fog, horse stamping. The rule is the same rule it was at the first watch. The man is not the same man.' },
+        { who: 'narr', text: 'If he goes, the one man who can speak to Tuesday goes with him, and the auditors will find an empty yard. If he stays, he stays in your yard, angry, where the auditors can see him.' }
       ],
       options: [
         {
@@ -273,7 +286,7 @@
       type: 'choice', next: 'w5_intro',
       intro: [
         { who: 'rook', text: 'Could not sleep. Kept seeing the horse come up the road. You have read my log, then. It is all in the log, keeper. I wrote it plain.' },
-        { who: 'narr', text: 'You have heard a night full of people. Lay what you have in front of him, one thing at a time, and watch the story move.' }
+        { who: 'narr', text: 'You have heard a night full of people. Lay what you have in front of him, one thing at a time, and watch the story move. What you can put to him depends on what you heard tonight. There is more in him than the first answer. Keep going.' }
       ],
       options: [
         {
@@ -285,29 +298,39 @@
           ]
         },
         {
+          id: 'rook_years', kind: 'ask', label: 'Ask how long he has kept this gate',
+          sets: ['rook_years'],
+          lines: [
+            { who: 'rook', text: 'Eleven years at this desk. You have had the nights for six of them, and never once asked me a question you did not need. So ask this one plainly too.' },
+            { who: 'rook', text: 'I was proud of this gate. That is the rotten part. A proud man writes a log that protects the gate, and tells himself he is protecting the road.' }
+          ]
+        },
+        {
           id: 'rook_bell', kind: 'ask', label: 'Put Sella\'s account to him',
           requires: 'heard_sella', sets: ['rook_admits_bell'],
           lines: [
             { who: 'narr', text: 'You tell him: the bell book says two rings, a quarter to seven and seven, in ink, written as she rang them. He looks at the desk for a long time.' },
             { who: 'rook', text: 'The first one, I will swear I never heard. The wind, the lamp, I do not know. The second one...' },
-            { who: 'rook', text: 'I heard the second one. God help me. I was standing at the gate with my hand on the bar and I heard it, and the boy was looking at me, and I lifted the bar anyway. Write that I am a liar in my own log before you write that I am deaf. At least the lying was mine.' }
+            { who: 'narr', text: 'The weather note on your desk says the wind was none, all evening. You let the excuse sit where he put it.' },
+            { who: 'rook', text: 'I heard the second one. God help me. I was standing at the gate with my hand on the bar and I heard it, and the boy was looking at me, and I lifted the bar anyway. Write that I am a liar in my own log before you write that I am deaf. At least the lying was mine.' },
+            { who: 'rook', text: 'Last spring I asked Sella to leave a crossing out of her book, and she refused me to my face. I should have learned the road from her.' }
           ]
         },
         {
           id: 'rook_asking', kind: 'ask', label: 'Put the asking to him',
-          requires: 'rook_admits_bell', sets: ['rook_admits_asking'],
+          requiresAny: ['rook_admits_bell', 'heard_maren', 'heard_vane'], sets: ['rook_admits_asking'],
           lines: [
-            { who: 'rook', text: 'You wrote that he took the risk on his own head. His sister says he was afraid of the causeway. Vane says he begged. Which is it, Anselm?' },
+            { who: 'narr', text: 'You put it to him. The log says Pell took the risk on his own head. His sister says he was afraid of the causeway. Vane says he begged. Which is it, Anselm?' },
             { who: 'rook', text: 'He begged. That is the worst of it and I have been carrying it since the horse came back. He begged me, keeper to courier, boy I have known since he was small, and I said yes, and then I wrote that he took the risk on himself, as if a begged-for yes is the same as a choice.' },
             { who: 'rook', text: 'It is not the same. I knew it when I wrote it. A man who begs is asking you to carry it with him. I carried it as far as the gate and then I put it all on him, in ink.' }
           ]
         },
         {
           id: 'rook_cart', kind: 'ask', label: 'Put the tally sheet to him',
-          requires: 'rook_admits_asking', sets: ['rook_admits_cart'],
+          requires: 'read_tally', requiresAny: ['rook_admits_asking', 'vane_confronted', 'heard_sella'], sets: ['rook_admits_cart'],
           lines: [
             { who: 'narr', text: 'You lay the tally sheet on the desk. Three carts Tuesday. Two entries in the log. You do not say a word.' },
-            { who: 'rook', text: 'Vane paid me. Not for Pell, never for Pell, I would cut my hand off first. Tuesday night, his cart, no entry, money in my coat. It was not the first time I have been paid for quiet, but it was the first time I hated the coat.' },
+            { who: 'rook', text: 'Vane paid me. Not for Pell, never for Pell, I would cut my hand off first. Tuesday night, his cart, no entry, money in my coat. The gatehouse roof leaked all winter and the office would not pay, and I told myself the money was for the roof. It was for the quiet. It was always for the quiet.' },
             { who: 'rook', text: 'When the auditors read that sheet they will hang Tuesday and today on the same nail, and they will not be wrong to. Write it how it was. I am done writing around things.' }
           ]
         },
@@ -323,14 +346,15 @@
     w5_intro: {
       type: 'lines', next: 'w5_runner',
       lines: [
-        { who: 'narr', text: '04:00. The last watch. Boots on the causeway stones, young and quick, and a clerk\'s satchel banging at a hip. The auditors send their runner ahead of them, the way weather sends a first cold gust.' }
+        { who: 'narr', text: '04:00. The last watch. Boots on the headland path, young and quick, and a clerk\'s satchel banging at a hip. The auditors send their runner ahead of them, the way weather sends a first cold gust.' },
+        { who: 'narr', text: 'The runners come down the headland path, above the fog. The causeway rule was never theirs to break.' }
       ]
     },
 
     w5_runner: {
       type: 'choice', next: 'dawn_intro',
       intro: [
-        { who: 'wick', text: 'Wick, clerk to the auditors. I ride ahead with the questions so the log can answer them standing up, as my master says. Three questions, keeper, the same three the whole Reach is asking.' },
+        { who: 'wick', text: 'I\'m Wick, clerk to the auditors. I ride ahead with the questions so the log can answer them standing up, as my masters say. Three questions, keeper, the same three the whole Reach is asking.' },
         { who: 'wick', text: 'You can answer me now, or the log can answer at dawn. The log is the one they keep. And a word between us: my masters read tally sheets too. They always read the tally sheet.' },
         { who: 'narr', text: 'Whatever you write is what the record says. That is the whole of your job tonight, and it is nearly dawn.' }
       ],
@@ -346,7 +370,7 @@
           id: 'wick_asking', kind: 'ask', label: 'Hear the second question: the asking',
           sets: ['wick_asking'],
           lines: [
-            { who: 'wick', text: 'Second. Did the courier ask to cross, or was he sent? A boy who asks is one kind of dead, if he is dead. A boy who was sent is another. The auditors are particular about the difference, and so is his sister.' }
+            { who: 'wick', text: 'Second. Did the courier ask to cross, or did he cross without asking? His sister says he\'d never ask in fog. The day log says he asked and took the risk on himself. A boy who asks is one kind of dead, if he is dead. A boy let through unasked is another. The auditors are particular about the difference, and so is his sister.' }
           ]
         },
         {
@@ -369,7 +393,8 @@
       type: 'lines', next: 'write',
       lines: [
         { who: 'narr', text: '05:30. The fog is thinning at the edges. Somewhere up the hill a door closes: the auditors, on their way down.' },
-        { who: 'narr', text: 'The outgoing log lies open on the desk. Three entries are yours to write: the bell, the asking, and the cart the log never named. You can only write an account you actually hold, from the desk or from the night. Choose what the record says.' }
+        { who: 'narr', text: 'The outgoing log lies open on the desk. Three entries are yours to write: the bell, the asking, and the cart the log never named. You can only write an account you actually hold, from the desk or from the night. Choose what the record says.' },
+        { who: 'narr', text: 'These are the same three questions Wick carried down the hill, and the auditors read them in this order: the bell first, then the asking, then the cart. Each wording below is an account, and the log prints the one you pick, as written.' }
       ]
     },
 
@@ -408,7 +433,7 @@
       options: [
         { id: 'ask_begged', stance: 'asked', requires: 'rook_admits_asking', source: 'Rook\'s own admission, given in the night',
           label: 'He begged to cross, and the keeper said yes',
-          logLine: 'The courier begged to cross, for the bonus that would have cleared his debt, and the day keeper said yes. A begged-for yes is not the same as a choice, and this log will not call it one.' },
+          logLine: 'The courier begged to cross, and the day keeper said yes, knowing the boy was afraid of the causeway. A begged-for yes is not the same as a choice, and this log will not call it one.' },
         { id: 'ask_asked_log', stance: 'asked', source: 'The day log, as Rook wrote it',
           label: 'He asked to cross and took the risk on himself',
           logLine: 'The courier asked to cross with the mail cart and took the risk on his own head.' },
@@ -417,7 +442,7 @@
           logLine: 'The courier begged to cross. The run carried a bonus that would have cleared his debt to the carter Vane, and he wanted it badly enough to ask in fog.' },
         { id: 'ask_notasked', stance: 'not-asked', requires: 'heard_maren', source: 'Maren\'s account, at the gate',
           label: 'He did not ask. He was afraid of the causeway',
-          logLine: 'The courier did not ask to cross. He was afraid of the causeway in fog, as all the couriers are, and this log finds no asking in him.' },
+          logLine: 'The courier did not ask to cross. He was afraid of the causeway in fog, as all the couriers are, and this log finds that he did not ask.' },
         { id: 'ask_open', stance: 'open', source: 'Your own hand',
           label: 'The record does not settle the asking',
           logLine: 'The record does not settle whether the courier asked to cross. The accounts disagree, and this log will not choose between them.' }
@@ -428,8 +453,8 @@
       prompt: 'The tally counts a crossing the day log never named. What does the outgoing log say?',
       options: [
         { id: 'cart_favor_tally', stance: 'favor', requires: 'read_tally', source: 'The tally sheet, on your desk',
-          label: 'A cart crossed unlogged, a favor by the day keeper',
-          logLine: 'On Tuesday night a cart crossed with no entry in the log, a favor by the day keeper to the carter Vane. The tally sheet counts it even though the log does not.' },
+          label: 'A cart crossed unlogged on Tuesday night',
+          logLine: 'On Tuesday night a cart crossed with no entry in the log. The tally counts three carts over, and the log names two. This log names the gap, and leaves the reason for it to the auditors.' },
         { id: 'cart_favor_admission', stance: 'favor', requires: 'rook_admits_cart', source: 'Rook\'s own admission, given in the night',
           label: 'The day keeper took money for an unlogged crossing',
           logLine: 'On Tuesday night the day keeper took money from the carter Vane for a crossing he did not log. He admitted it in this gatehouse, in the night, to the keeper writing this.' },
@@ -441,7 +466,7 @@
           logLine: null },
         { id: 'cart_open', stance: 'open', requires: 'read_tally', source: 'Your own hand',
           label: 'The record does not settle the unlogged crossing',
-          logLine: 'The tally counts a crossing the log does not name. This log cannot settle it and says so.' }
+          logLine: 'The tally counts a crossing the log does not name, and this log cannot settle it.' }
       ]
     }
   ];
@@ -454,7 +479,8 @@
       body: [
         'The auditors read the outgoing log at your desk, and then they read the tally sheet, the way Wick said they would. It took them less than a minute to find Tuesday.',
         'A log that backs the day keeper on the bell and says nothing about the cart is not a mistake. They have a word for it, and the word ends the gate. The bar comes off its hinges that same week. The causeway keeps its fog and loses its keeper, and carts go the long way round the headland until someone in an office decides the Reach can be trusted again.',
-        'Rook is struck off beside you. Whatever you meant to protect, the sheet protected nobody. It only chose the ground you both fell on.'
+        'Rook is struck off beside you. Whatever you meant to protect, the sheet protected nobody. It only chose the ground you both fell on.',
+        'Of Pell there is still no word. The inquiry will ask about him in rooms you will never see, and answer itself the same way.'
       ]
     },
     'rook-carries-it': {
@@ -462,7 +488,18 @@
       body: [
         'The auditors read the log twice. The second time, one of them walks up the hill to the bell tower and comes back with Sella\'s book under his arm, and the two books agree with yours and not with Rook\'s.',
         'Rook is struck from the gate service before noon. He hands in the day coat at your desk and does not argue. At the door he says the log was the first true thing written about him in years, and that he wrote half of it himself, in the night, out loud. Then he walks up the hill to tell Pell\'s mother before the office can.',
-        'You keep the gate. The bell rings out over the causeway that evening, on time, and the sound carries a long way in the clear air.'
+        'You keep the gate. The bell rings out over the causeway that evening, on time, and the sound carries a long way in the clear air.',
+        'Of Pell there is still no word. Rook walks up the hill to tell his mother himself, before the office can. Whatever the fog has, it keeps it a while longer.'
+      ]
+    },
+    'favor-named': {
+      title: 'THE FAVOR IS NAMED',
+      body: [
+        'The auditors read the outgoing log, and then they read the tally sheet, and for once the two books tell the same story about Tuesday: a cart crossed, no entry was made, and the night keeper has written the gap down in ink where it cannot be smoothed away.',
+        'That is enough to end Rook\'s time on the day gate. Not struck off in disgrace, not yet. Suspended, and sent up the hill to wait while the office decides what a paid silence is worth. He hands in the day coat without arguing. A man who has been paid for quiet knows what it sounds like when the quiet runs out.',
+        'Whatever else the log left open, the bell, the asking, stays open with it. But the cart is named now, and a named thing can be carried by the man who did it, instead of by whoever the office finds convenient.',
+        'At the change of shift he stops at your desk. "You wrote it the way it was," he says. "That is a new experience for this gatehouse." Then he goes up the hill, the day coat folded over his arm like something that belongs to somebody else now.',
+        'Of Pell there is still no word. Under the questions about carts and bells, his name stays at the top of the file, unanswered.'
       ]
     },
     'pell-named': {
@@ -470,23 +507,27 @@
       body: [
         'The auditors are pleased with the log. It is tidy. The bell was not rung, the boy asked, the boy took the risk on his own head. A closed account, signed by the night.',
         'Rook keeps the day gate. Sella keeps her bell, though the log has marked her book as the one that was wrong, and she knows it, and she will ring over this road for years with that written under her name. And Pell, wherever the fog has him, carries the whole of it, because a missing boy cannot hand any of it back.',
-        'You keep the gate too. Some nights the fog comes in and you hear a horse on the stones that is not there, and you get up and check the bar, and the bar is fine, and that is the size of the rest of your life at this gate.'
+        'You keep the gate too. Some nights the fog comes in and you hear a horse on the stones that is not there, and you get up and check the bar, and the bar is fine, and that is the size of the rest of your life at this gate.',
+        'Nobody goes looking for Pell again until the tide turns. That is the size of what the log decided.'
       ]
     },
     'sella-named': {
       title: 'SELLA CARRIES IT',
       body: [
-        'The log says no bell was rung, and the auditors believe the log, because the log is what they came for. The bell book is taken as a keeper\'s fancy. Sella Wray is struck from the bell post she has held for forty years.',
-        'She comes down the hill one last time to give you the tower key. She does not rail. She says a bell is only a rope and a weight of iron, and a book is only as good as the next book believes it is. Then she goes up to her cottage, and the hill is quieter than it has any right to be.',
-        'Rook keeps the day gate. He does not meet your eye at the change of shift, either of you, ever again. The fog bell rings the next night, rung by a boy from the village who is still learning where the rope is.'
+        'The log says no bell was rung, and the auditors believe the log, because the log is what they came for. The bell book is taken as something the bell keeper made up. Sella Wray is struck from the bell post she has held for forty years.',
+        'She comes down the hill one last time to give you the tower key. She does not rail. She says a bell is only a rope and a weight of iron, and a book only counts if the next book believes it. Then she goes up to her cottage, and the hill is quieter than it has any right to be.',
+        'Rook keeps the day gate. Neither of you meets the other\'s eye at the change of shift, ever again. The fog bell rings the next night, rung by a boy from the village who is still learning where the rope is.',
+        'Of Pell there is still no word. The new bell boy rings at the wrong hour on his first night, and the sound goes over the water like a question nobody answers.'
       ]
     },
     'record-stays-open': {
       title: 'THE RECORD STAYS OPEN',
       body: [
         'The auditors read the log and find a careful document that settles less than they hoped. They are not angry. They are worse than angry: they take the day log, the tally sheet, the bell book, and your outgoing log away in a satchel, and the inquiry goes to the office, where it will be settled by people who were not in the fog.',
-        'Rook keeps the gate on sufferance. Sella keeps her bell. Nobody is struck off and nobody is cleared, and Pell\'s name stays in the open file, which is the office\'s way of saying a thing is not finished with anyone yet.',
-        'You keep the night. It is not the worst ending a log can have. It is only the one where the writing stops being yours.'
+        'Rook keeps the gate for now, under warning, and only just. Sella keeps her bell. Nobody is struck off and nobody is cleared, and Pell\'s name stays in the open file, which is the office\'s way of saying a thing is not finished with anyone yet.',
+        'You keep the night. It is not the worst ending a log can have. It is only the one where the writing stops being yours.',
+        'Wick stays until the stove goes cold. "For what it is worth," he says at the door, "I have carried worse logs than yours up that hill. I have carried better ones too." Then the fog takes him, the way it takes everything here, without comment.',
+        'Pell\'s name stays in the open file. An open file is not an answer. It is a promise that somebody, someday, has to go on asking.'
       ]
     }
   };
@@ -498,18 +539,43 @@
     var slug;
     if (bell === 'not-rung' && cart === 'omitted') slug = 'gate-closed';
     else if (bell === 'rung' && cart === 'favor') slug = 'rook-carries-it';
+    else if (cart === 'favor') slug = 'favor-named';
     else if (bell === 'not-rung' && asking === 'asked') slug = 'pell-named';
     else if (bell === 'not-rung') slug = 'sella-named';
     else slug = 'record-stays-open';
+
+    var body = ENDINGS[slug].body.slice();
+
+    // Evidence strength counts: an admission in the log is heavier
+    // than a sheet, and the resolver says so.
+    if (cart === 'favor' && (slug === 'rook-carries-it' || slug === 'favor-named')) {
+      if (state.log.cart.id === 'cart_favor_admission') {
+        body.push('It is Rook\'s own admission that does it, in the end. Paper can be argued with. A man\'s own words, written down the same night he said them, cannot.');
+      } else if (state.log.cart.id === 'cart_favor_tally') {
+        body.push('It is the sheet that does it, in the end. Three marks against two entries, in the day keeper\'s own hand. Paper can be argued with, but arithmetic is harder to argue with.');
+      }
+    }
+    // The asking entry is read on its own weight in the open endings.
+    if (slug === 'favor-named' || slug === 'record-stays-open') {
+      if (state.log.asking && state.log.asking.id === 'ask_begged') {
+        body.push('The asking entry is the one the auditors read twice. A begged-for yes, set down in ink, is hard to read as anything but what it was.');
+      } else if (asking === 'not-asked') {
+        body.push('The asking entry stands on Maren\'s word alone, and the office will weigh it the way offices weigh a sister\'s word. It is in the book anyway. That is what books are for.');
+      }
+    }
 
     var epilogues = [];
     if (state.gate.maren === 'opened') {
       epilogues.push('Maren came back over the causeway as the light came up, lantern dead, coat stiff with mud to the knee. She found the cart at the far end, broken against the rail, and Pell\'s scarf caught on the rail above the tide line. No more than that. She stood in your doorway and told you the way a person reports weather, and then she sat down by the stove and did not cry until the auditors had gone.');
     } else {
-      epilogues.push('Maren waited in the porch all night, facing the door. At dawn she walks the headland road the long way round to look for her brother, because the gate would not open for her and the office has no news it can give her. She does not thank you for keeping her safe. She may never know what to thank you for, or blame you for, and neither do you.');
+      epilogues.push('Maren waited in the porch all night, facing the door. At dawn she walked the headland road the long way round to look for her brother, because the gate would not open for her and the office had no news it could give her. She did not thank you for keeping her safe. She may never know what to thank you for, or blame you for, and neither do you.');
     }
     if (state.gate.vane === 'opened') {
-      epilogues.push('Vane is gone. His cart crossed in the third watch and the far side has him now, and whatever the auditors want to ask him about Tuesday will have to wait for a man who is in no hurry to be asked. Your log names his favor. His absence names the rest.');
+      var vaneGone = 'Vane is gone. His cart crossed in the third watch and the far side has him now, and whatever the auditors want to ask him about Tuesday will have to wait for a man who is in no hurry to be asked.';
+      if (cart === 'favor') vaneGone += ' Your log names his favor, so the asking will happen on paper if it never happens in a room.';
+      else if (cart === 'omitted') vaneGone += ' Your log says nothing about Tuesday, so on paper there is nothing to ask him at all.';
+      else vaneGone += ' Your log leaves Tuesday unsettled, and an unsettled line follows a man home eventually.';
+      epilogues.push(vaneGone);
     } else {
       epilogues.push('Vane is in your yard when the auditors come down, unhitching nothing, standing by his cart with his hat in his hands. They take him into the gatehouse to talk about the tally sheet, and he goes the way a man goes when the paper has already said it all.');
     }
@@ -523,7 +589,7 @@
     return {
       slug: slug,
       title: ENDINGS[slug].title,
-      body: ENDINGS[slug].body.slice(),
+      body: body,
       epilogues: epilogues,
       logLines: logLines
     };
@@ -575,6 +641,7 @@
       return node.options.filter(function (o) {
         if (o.kind === 'ask' && askedHere[o.id]) return false;
         if (o.requires && !has(state, o.requires)) return false;
+        if (o.requiresAny && !o.requiresAny.some(function (f) { return has(state, f); })) return false;
         return true;
       });
     }
@@ -589,6 +656,25 @@
     state.flags['read_' + docKey] = true;
     var lines = [{ who: 'doc', text: d.title.toUpperCase() + '. ' + d.keeper }];
     d.lines.forEach(function (l) { lines.push({ who: 'doc', text: l }); });
+    // The tally is a living sheet: it counts the player's own night too.
+    if (docKey === 'tally') {
+      var mine = [];
+      if (state.gate.maren === 'opened') mine.push('the gate opened for Maren');
+      if (state.gate.vane === 'opened') mine.push('the gate opened for Vane\'s cart');
+      if (mine.length) {
+        lines.push({ who: 'doc', text: 'Tonight, in your own hand: ' + mine.join('; ') + '. The marks are fresh, and they are yours.' });
+      } else if (state.gate.maren || state.gate.vane) {
+        lines.push({ who: 'doc', text: 'Tonight, in your own hand: the gate opened for no one. The rule held.' });
+      }
+      if (has(state, 'vane_confronted') && !state.flags.reread_tally) {
+        state.flags.reread_tally = true;
+        lines.push({ who: 'narr', text: 'Read again after Vane, the gap has a shape now: one cart, one favor, one name left out.' });
+      }
+    }
+    if (docKey === 'daylog' && has(state, 'rook_admits_bell') && !state.flags.reread_daylog) {
+      state.flags.reread_daylog = true;
+      lines.push({ who: 'narr', text: 'Read again after Rook, the second line is the one he could not say out loud until the fourth watch: no bell rung. He heard it ring.' });
+    }
     return lines;
   }
 

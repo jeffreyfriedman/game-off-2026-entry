@@ -32,6 +32,10 @@
   var entered = {};        // nodeId -> true once its intro has been printed
   var endingShown = false;
   var decisionHandles = {}; // telemetry decision_pause handles by point
+  var knownOpts = {};       // nodeId:optionId -> true once rendered (New markers)
+  var renderedNodes = {};   // nodeId -> true after its first choices render
+  var armedExit = null;     // "nodeId:optionId" armed leave-confirm, or null
+  var lastDocBtn = null;    // desk button that opened the overlay (focus return)
 
   var el = {
     transcript: document.getElementById('transcript'),
@@ -121,7 +125,13 @@
     addWatchHead(id);
     if (node.intro) node.intro.forEach(addLine);
     if (node.lines) node.lines.forEach(addLine);
-    if (id === 'dawn_intro' && window.OLAudio) OLAudio.setMood('dawn');
+    if (id === 'dawn_intro' && window.OLAudio) { OLAudio.setMood('dawn'); if (OLAudio.toll) OLAudio.toll(2); }
+    if (id === 'w3_intro' && state.gate.maren === 'barred') {
+      addLine({ who: 'narr', text: 'In the porch, Maren shifts in her sleep on the bench, the blanket up to her chin, facing the door even now.' });
+    }
+    if (id === 'w5_runner' && (state.gate.maren === 'opened' || state.gate.vane === 'opened')) {
+      addLine({ who: 'wick', text: 'Your tally has fresh marks on it tonight, keeper. I counted them coming down. The auditors will count them too, and they will ask whose hand made them. Just so you know before you write.' });
+    }
     if (node.type === 'gate') tcDecisionStart(node.gate === 'maren' ? 'maren_crossing' : 'vane_crossing');
     if (node.type === 'write') tcDecisionStart('outgoing_log');
     if (node.type === 'ending') showEnding();
@@ -149,6 +159,14 @@
       }
       box.appendChild(para);
     });
+    var own = document.createElement('p');
+    if (state.gate.maren === 'opened' || state.gate.vane === 'opened') {
+      own.className = 'gap';
+      own.textContent = 'Of your own crossings tonight, this log says nothing at all.';
+    } else {
+      own.textContent = 'You opened the gate for no one tonight. The rule held, in your hand as in the book.';
+    }
+    box.appendChild(own);
     el.transcript.appendChild(box);
 
     var t = document.createElement('p');
@@ -168,6 +186,11 @@
     b.className = 'choice ' + (cls || '');
     b.dataset.opt = opt.id;
     b.appendChild(document.createTextNode(opt.label));
+    if (opt.isNew) {
+      var n = document.createElement('span');
+      n.className = 'newtag'; n.textContent = 'New';
+      b.appendChild(n);
+    }
     if (opt.source) {
       var s = document.createElement('span');
       s.className = 'src';
@@ -178,12 +201,27 @@
     return b;
   }
 
+  var WICK_NOTES = {
+    bell: 'Wick asked it first: was the bell rung, or not?',
+    asking: 'Wick asked it first: did Pell ask to cross, or not?',
+    cart: 'Wick asked it first: what does the tally count that the log does not name?'
+  };
+
   function renderChoices() {
+    // The footer is rebuilt on every move; carry keyboard focus to
+    // the equivalent button so a keyboard player is not sent back
+    // to the top of the tab order each time.
+    var focusOpt = null;
+    if (el.choices.contains(document.activeElement) && document.activeElement.dataset) {
+      focusOpt = document.activeElement.dataset.opt || null;
+    }
     el.choices.innerHTML = '';
     var inner = document.createElement('div');
     inner.className = 'inner';
     el.choices.appendChild(inner);
     var node = OL.nodeDef(state);
+    var firstRenderHere = !renderedNodes[state.node];
+    renderedNodes[state.node] = true;
 
     if (node.type === 'ending') {
       var r = document.createElement('button');
@@ -191,6 +229,7 @@
       r.textContent = 'Work another night (play again)';
       r.addEventListener('click', restart);
       inner.appendChild(r);
+      cueScroll();
       return;
     }
 
@@ -204,6 +243,7 @@
         afterMove();
       });
       inner.appendChild(c);
+      cueScroll();
       return;
     }
 
@@ -214,18 +254,93 @@
       var h2 = document.createElement('h2'); h2.textContent = point.title;
       var pp = document.createElement('p'); pp.textContent = point.prompt;
       head.appendChild(h2); head.appendChild(pp);
+      var wickFlag = { bell: 'wick_bell', asking: 'wick_asking', cart: 'wick_cart' }[point.id];
+      if (wickFlag && OL.has(state, wickFlag)) {
+        var wn = document.createElement('p');
+        wn.className = 'wicknote'; wn.textContent = WICK_NOTES[point.id];
+        head.appendChild(wn);
+      }
       inner.appendChild(head);
     }
 
-    OL.visibleOptions(state).forEach(function (opt) {
+    var visible = OL.visibleOptions(state);
+    var exitArmed = armedExit && armedExit.indexOf(state.node + ':') === 0;
+    if (exitArmed) {
+      var warn = document.createElement('p');
+      warn.className = 'warn';
+      warn.textContent = 'You have not asked everything here. Leaving ends this conversation, and the unasked stays unasked.';
+      inner.appendChild(warn);
+    }
+    visible.forEach(function (opt) {
       var cls = opt.kind === 'go' ? 'go' : (node.type === 'gate' ? 'gate' : (node.type === 'write' ? 'write' : ''));
-      inner.appendChild(makeButton(opt, cls));
+      var view = opt;
+      if (!firstRenderHere && !knownOpts[state.node + ':' + opt.id]) {
+        view = Object.assign({}, opt, { isNew: true });
+      }
+      knownOpts[state.node + ':' + opt.id] = true;
+      var btn = makeButton(view, cls);
+      if (exitArmed && opt.kind === 'go' && armedExit === state.node + ':' + opt.id) {
+        btn.firstChild.textContent = 'Leave anyway';
+      }
+      inner.appendChild(btn);
+    });
+
+    if (node.type === 'write') {
+      var shown = {};
+      visible.forEach(function (o) { shown[o.id] = true; });
+      var lockedCount = 0;
+      OL.WRITE_POINTS[state.writeStep].options.forEach(function (o) {
+        if (!shown[o.id]) lockedCount += 1;
+      });
+      if (lockedCount) {
+        var b = document.createElement('button');
+        b.type = 'button'; b.className = 'choice write locked'; b.disabled = true;
+        b.appendChild(document.createTextNode(
+          lockedCount === 1 ? 'One more account exists that you never heard tonight'
+                            : lockedCount + ' more accounts exist that you never heard tonight'));
+        var s = document.createElement('span');
+        s.className = 'src'; s.textContent = 'A keeper can only write what the night actually gave them.';
+        b.appendChild(s);
+        inner.appendChild(b);
+      }
+    }
+    if (focusOpt) {
+      var again = inner.querySelector('[data-opt="' + focusOpt + '"]');
+      if (again) again.focus();
+    }
+    cueScroll();
+  }
+
+  // Digit keys pick choices, for keyboard players.
+  document.addEventListener('keydown', function (ev) {
+    if (!el.overlay.hidden) return;
+    if (ev.key < '1' || ev.key > '9') return;
+    var btns = el.choices.querySelectorAll('.choice:not([disabled])');
+    var idx = parseInt(ev.key, 10) - 1;
+    if (btns[idx]) btns[idx].click();
+  });
+
+  function cueScroll() {
+    requestAnimationFrame(function () {
+      var ch = el.choices;
+      var more = ch.scrollHeight > ch.clientHeight + 4 &&
+        ch.scrollTop + ch.clientHeight < ch.scrollHeight - 4;
+      ch.classList.toggle('more', !!more);
     });
   }
+  el.choices.addEventListener('scroll', cueScroll);
 
   function render() {
     enterNode();
     el.watchlabel.textContent = WATCH_LABEL[state.node] || '';
+    document.body.dataset.node = state.node;
+    var m = /^w(\d)_/.exec(state.node);
+    document.body.dataset.watch = m ? m[1]
+      : (state.node === 'dawn_intro' || state.node === 'write' || state.node === 'ending') ? '6' : '0';
+    if (window.OLAudio && OLAudio.setPhase) {
+      var phase = { w1_intro: 0, w1_maren: 0, w1_gate: 0, w2_intro: 1, w2_sella: 1, w3_intro: 1, w3_vane: 1, w3_gate: 1, w4_intro: 2, w4_rook: 2, w5_intro: 2, w5_runner: 2, dawn_intro: 2, write: 2 }[state.node];
+      if (phase !== undefined) OLAudio.setPhase(phase);
+    }
     renderChoices();
     scrollStage();
   }
@@ -234,6 +349,24 @@
 
   function onChoose(optionId) {
     startAudioOnce();
+    // Leaving a conversation with unasked questions arms a confirm
+    // first, so a player never ends a scene by accident.
+    var nodeNow = OL.nodeDef(state);
+    if (nodeNow && nodeNow.type === 'choice') {
+      var optsNow = OL.visibleOptions(state);
+      var picked = null;
+      optsNow.forEach(function (o) { if (o.id === optionId) picked = o; });
+      if (picked && picked.kind === 'go') {
+        var unasked = optsNow.filter(function (o) { return o.kind === 'ask'; });
+        var key = state.node + ':' + optionId;
+        if (unasked.length && armedExit !== key) {
+          armedExit = key;
+          renderChoices();
+          return;
+        }
+        armedExit = null;
+      }
+    }
     var watchesBefore = state.watchesDone.length;
     var nodeBefore = state.node;
     var res = OL.choose(state, optionId);
@@ -246,8 +379,11 @@
     if (res.gateDecision) {
       tcSend('gate_decision', { gate: res.gateDecision.gate, choice: res.gateDecision.choice });
       tcDecisionCommit(res.gateDecision.gate === 'maren' ? 'maren_crossing' : 'vane_crossing');
+      if (window.OLAudio && OLAudio.gateSound) OLAudio.gateSound(res.gateDecision.choice === 'opened');
     }
     if (res.wrote) {
+      if (window.OLAudio && OLAudio.penSound) OLAudio.penSound();
+      if (res.wrote === 'bell' && window.OLAudio && OLAudio.toll) OLAudio.toll(1);
       var point = OL.WRITE_POINTS.find(function (p) { return p.id === res.wrote; });
       var chosen = state.log[res.wrote];
       addLine({ who: 'written', text: chosen.logLine || 'Of this, the log says nothing at all.' });
@@ -263,6 +399,9 @@
     entered = {};
     endingShown = false;
     decisionHandles = {};
+    knownOpts = {};
+    renderedNodes = {};
+    armedExit = null;
     el.transcript.innerHTML = '';
     if (window.OLAudio) OLAudio.setMood('night');
     render();
@@ -270,8 +409,18 @@
 
   /* ---------------- document overlay (desk bar) ---------------- */
 
+  function closeOverlay() {
+    if (el.overlay.hidden) return;
+    el.overlay.hidden = true;
+    // Reading a document can unlock options (the tally above all):
+    // refresh the choices so the new option is actually there.
+    renderChoices();
+    if (lastDocBtn) lastDocBtn.focus();
+  }
+
   document.querySelectorAll('.deskbtn').forEach(function (btn) {
     btn.addEventListener('click', function () {
+      lastDocBtn = btn;
       var key = btn.dataset.doc;
       var lines = OL.readDocument(state, key);
       if (!lines) return;
@@ -288,11 +437,12 @@
       document.getElementById('docclose').focus();
     });
   });
-  document.getElementById('docclose').addEventListener('click', function () {
-    el.overlay.hidden = true;
-  });
+  document.getElementById('docclose').addEventListener('click', closeOverlay);
   el.overlay.addEventListener('click', function (ev) {
-    if (ev.target === el.overlay) el.overlay.hidden = true;
+    if (ev.target === el.overlay) closeOverlay();
+  });
+  document.addEventListener('keydown', function (ev) {
+    if (ev.key === 'Escape') closeOverlay();
   });
 
   /* ---------------- demo mode ---------------- */
@@ -307,6 +457,16 @@
       } else if (node.type === 'write') {
         var want = { bell: 'bell_rung_admission', asking: 'ask_begged', cart: 'cart_favor_admission' }[OL.WRITE_POINTS[state.writeStep].id];
         pick = document.querySelector('[data-opt="' + want + '"]') || document.querySelector('#choices .choice');
+      } else if (node.type === 'desk') {
+        // Documents are never consumed; never re-read one, and take
+        // the exit as soon as the day log has been read.
+        var dopts = OL.visibleOptions(state);
+        var exit = dopts.find(function (o) { return o.kind === 'go'; });
+        var unread = dopts.find(function (o) {
+          return o.kind === 'doc' && !state.flags['read_' + o.doc];
+        });
+        var dpick = unread || exit;
+        if (dpick) pick = document.querySelector('[data-opt="' + dpick.id + '"]');
       } else {
         var opts = OL.visibleOptions(state);
         var ask = opts.find(function (o) { return o.kind === 'ask' || o.kind === 'doc'; });

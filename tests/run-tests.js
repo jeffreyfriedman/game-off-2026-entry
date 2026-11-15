@@ -81,11 +81,15 @@ for (const [id, n] of Object.entries(OL.NODES)) {
   if (n.type === 'gate') eq(n.options.length, 2, id + ' gate has exactly two options');
 }
 
-/* ---------- all five endings reachable through real play ---------- */
+/* ---------- all six endings reachable through real play ---------- */
 eq(OL.resolveEnding(play({ ...FULL, write: { bell: 'not-rung', asking: 'asked', cart: 'omitted' } })).slug,
   'gate-closed', 'ending: cover-up closes the gate');
 eq(OL.resolveEnding(play({ ...FULL, write: { bell: 'rung', asking: 'asked', cart: 'favor' } })).slug,
   'rook-carries-it', 'ending: rook carries it');
+eq(OL.resolveEnding(play({ ...FULL, write: { bell: 'open', asking: 'open', cart: 'favor' } })).slug,
+  'favor-named', 'ending: the favor is named (favor written, bell left open)');
+eq(OL.resolveEnding(play({ ...FULL, write: { bell: 'not-rung', asking: 'asked', cart: 'favor' } })).slug,
+  'favor-named', 'ending: the favor is named (favor written, bell denied)');
 eq(OL.resolveEnding(play({ ...FULL, write: { bell: 'not-rung', asking: 'asked', cart: 'mistake' } })).slug,
   'pell-named', 'ending: the boy carries it');
 eq(OL.resolveEnding(play({ ...FULL, write: { bell: 'not-rung', asking: 'not-asked', cart: 'mistake' } })).slug,
@@ -100,6 +104,9 @@ eq(OL.resolveEnding(play({ ...FULL, write: { bell: 'open', asking: 'open', cart:
   const a = OL.resolveEnding(play({ ...FULL, gate: { maren: 'opened', vane: 'opened' }, write: { bell: 'rung', asking: 'asked', cart: 'favor' } }));
   ok(a.epilogues[0].includes('scarf'), 'maren opened: she finds the cart and the scarf');
   ok(a.epilogues[1].includes('gone'), 'vane opened: he is gone by dawn');
+  ok(a.epilogues[1].includes('names his favor'), 'vane opened + favor written: the log names his favor');
+  const c = OL.resolveEnding(play({ ...FULL, gate: { maren: 'opened', vane: 'opened' }, write: { bell: 'not-rung', asking: 'asked', cart: 'omitted' } }));
+  ok(c.epilogues[1].includes('nothing to ask him'), 'vane opened + cart omitted: the log gives them nothing to ask him');
   const b = OL.resolveEnding(play({ ...FULL, gate: { maren: 'barred', vane: 'barred' }, write: { bell: 'rung', asking: 'asked', cart: 'favor' } }));
   ok(b.epilogues[0].includes('porch'), 'maren barred: she waited in the porch');
   ok(b.epilogues[1].includes('yard'), 'vane barred: he is in the yard at dawn');
@@ -109,6 +116,7 @@ eq(OL.resolveEnding(play({ ...FULL, write: { bell: 'open', asking: 'open', cart:
 {
   const full = OL.resolveEnding(play({ ...FULL, write: { bell: 'rung', asking: 'asked', cart: 'favor' } }));
   eq(full.logLines.length, 3, 'full log prints three entries');
+  ok(!full.logLines[1].includes('bonus'), 'the begged line prints the admission account only, no blended bonus');
   const omitted = OL.resolveEnding(play({ ...FULL, write: { bell: 'not-rung', asking: 'asked', cart: 'omitted' } }));
   eq(omitted.logLines.length, 2, 'omitted cart prints two entries (the gap is the point)');
 }
@@ -151,16 +159,100 @@ eq(OL.resolveEnding(play({ ...FULL, write: { bell: 'open', asking: 'open', cart:
   const s = play({ ...FULL, write: { bell: 'rung', asking: 'asked', cart: 'favor' } });
   ok(s.flags.rook_admits_bell && s.flags.rook_admits_asking && s.flags.rook_admits_cart,
     'full questioning earns all three admissions');
-  // The chain is ordered: cart confrontation cannot precede the asking admission.
+  // The confrontations open from what the player actually holds:
+  // the tally plus any one testimony puts the cart in front of him,
+  // and the asking opens from Maren, Vane, or the bell admission.
   const t = OL.newGame();
   t.flags.heard_sella = true; t.flags.read_tally = true; t.node = 'w4_rook';
   const ids = OL.visibleOptions(t).map(o => o.id);
   ok(ids.includes('rook_bell'), 'rook: bell confrontation offered with Sella heard');
-  ok(!ids.includes('rook_cart'), 'rook: cart confrontation locked before earlier stages');
+  ok(ids.includes('rook_cart'), 'rook: cart confrontation offered with the tally and one testimony');
+  ok(!ids.includes('rook_asking'), 'rook: asking still locked with only Sella heard');
   OL.choose(t, 'rook_bell');
   const ids2 = OL.visibleOptions(t).map(o => o.id);
-  ok(ids2.includes('rook_asking'), 'rook: asking confrontation unlocks after the bell');
-  ok(!ids2.includes('rook_cart'), 'rook: cart still locked after stage one');
+  ok(ids2.includes('rook_asking'), 'rook: asking confrontation unlocks after the bell admission');
+  const u = OL.newGame();
+  u.node = 'w4_rook';
+  const uids = OL.visibleOptions(u).map(o => o.id);
+  ok(uids.includes('rook_boy') && uids.includes('rook_years'), 'rook: the open asks are always there');
+  ok(!uids.includes('rook_asking') && !uids.includes('rook_cart') && !uids.includes('rook_bell'),
+    'rook: confrontations stay locked with nothing heard');
+  const v = OL.newGame();
+  v.flags.heard_maren = true; v.node = 'w4_rook';
+  ok(OL.visibleOptions(v).map(o => o.id).includes('rook_asking'),
+    'rook: asking confrontation unlocks from Maren alone');
+}
+
+/* ---------- the desk-bar contract: reading mid-scene unlocks options ---------- */
+{
+  const s = OL.newGame();
+  s.node = 'w3_vane';
+  ok(!OL.visibleOptions(s).map(o => o.id).includes('vane_tally'),
+    'vane: the tally confrontation is hidden before the tally is read');
+  OL.readDocument(s, 'tally');
+  ok(OL.visibleOptions(s).map(o => o.id).includes('vane_tally'),
+    'vane: reading the tally through the desk bar unlocks the confrontation');
+}
+
+/* ---------- Tier 2 amendments ---------- */
+{
+  // Maren's debt question waits until she has named the debt herself.
+  const s = OL.newGame();
+  s.node = 'w1_maren';
+  ok(!OL.visibleOptions(s).map(o => o.id).includes('maren_debt'),
+    'maren: the debt question is not offered before the debt is named');
+  OL.choose(s, 'maren_pell');
+  ok(OL.visibleOptions(s).map(o => o.id).includes('maren_debt'),
+    'maren: the debt question appears once Pell has been asked about');
+}
+{
+  // The route card is a fourth desk document, and it is not evidence.
+  ok(!!OL.DOCUMENTS.routecard, 'desk: Pell\'s route card exists');
+  const s = OL.newGame();
+  s.node = 'desk';
+  eq(OL.visibleOptions(s).filter(o => o.kind === 'doc').length, 4, 'desk offers four documents');
+}
+{
+  // The tally counts the player's own night.
+  const s = OL.newGame();
+  s.gate.maren = 'opened';
+  const lines = OL.readDocument(s, 'tally');
+  ok(lines.some(l => l.text.includes('in your own hand')), 'tally: the sheet records the player\'s own opening');
+  const t = OL.newGame();
+  t.gate.maren = 'barred'; t.gate.vane = 'barred';
+  ok(OL.readDocument(t, 'tally').some(l => l.text.includes('opened for no one')),
+    'tally: the sheet records a night of barring too');
+}
+{
+  // Re-reading after testimony pays off, once.
+  const s = OL.newGame();
+  s.flags.vane_confronted = true;
+  ok(OL.readDocument(s, 'tally').some(l => l.text.includes('the gap has a shape')),
+    'tally: re-reading after Vane adds the payoff line');
+  ok(!OL.readDocument(s, 'tally').some(l => l.text.includes('the gap has a shape')),
+    'tally: the payoff line does not repeat');
+}
+{
+  // The resolver weighs evidence strength and the asking entry.
+  const mk = (bell, askingOpt, cartOpt) => ({
+    log: { bell: { stance: bell }, asking: askingOpt, cart: cartOpt },
+    gate: { maren: 'barred', vane: 'barred' }
+  });
+  const adm = OL.resolveEnding(mk('rung', { stance: 'asked', id: 'ask_begged' }, { stance: 'favor', id: 'cart_favor_admission' }));
+  eq(adm.slug, 'rook-carries-it', 'resolver: rung bell plus admission favor is rook-carries-it');
+  ok(adm.body.join(' ').includes('own words'), 'resolver: an admission-backed favor lands as his own words');
+  const tallyOnly = OL.resolveEnding(mk('open', { stance: 'asked', id: 'ask_asked_log' }, { stance: 'favor', id: 'cart_favor_tally' }));
+  eq(tallyOnly.slug, 'favor-named', 'resolver: a tally-only favor still names the favor');
+  ok(tallyOnly.body.join(' ').includes('arithmetic'), 'resolver: a tally-only favor lands as arithmetic');
+  const open = OL.resolveEnding(mk('rung', { stance: 'asked', id: 'ask_begged' }, { stance: 'open', id: 'cart_open' }));
+  eq(open.slug, 'record-stays-open', 'resolver: rung bell with an open cart stays open');
+  ok(open.body.join(' ').includes('read twice'), 'resolver: the begged entry is weighed in the open ending');
+}
+{
+  // Every ending closes Pell's thread by name, in its own words.
+  for (const [slug, e] of Object.entries(OL.ENDINGS)) {
+    ok(e.body.join(' ').includes('Pell'), 'ending ' + slug + ' names Pell before it closes');
+  }
 }
 
 /* ---------- desk discipline ---------- */

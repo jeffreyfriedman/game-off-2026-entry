@@ -1,6 +1,7 @@
 # local-only artifacts, never shipped
 media-src/listen.wav
 the-outgoing-log-listen.mp3
+media-generation-*.json
 *.muse-github-snapshot-sync.json
 dist/index.html.staging
 
@@ -13,3 +14,4 @@ BUILD-REPORT.md
 JURY.md
 TEACHING-AUDIT.md
 jury/
+audits/
