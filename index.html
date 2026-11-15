@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Outgoing Log</title>
+<link rel="stylesheet" href="src/style.css">
+</head>
+<body>
+<div id="app">
+  <header id="topbar">
+    <div id="brand">THE OUTGOING LOG <span id="brandsub">a night at Kestrel Gate</span></div>
+    <div id="watchlabel">The desk</div>
+    <nav id="deskbar" aria-label="Desk documents">
+      <button type="button" class="deskbtn" data-doc="daylog">Day log</button>
+      <button type="button" class="deskbtn" data-doc="weather">Weather note</button>
+      <button type="button" class="deskbtn" data-doc="tally">Tally sheet</button>
+    </nav>
+    <div id="settings">
+      <label id="volwrap">Sound
+        <input type="range" id="volume" min="0" max="100" step="1" value="50" aria-label="Volume">
+      </label>
+      <label id="tcwrap" title="Anonymous play statistics">
+        <input type="checkbox" id="tctoggle" checked> Stats
+      </label>
+    </div>
+  </header>
+  <p id="tcdisc">This game sends anonymous play statistics, including your country and region. Untick Stats in the bar above to opt out.</p>
+
+  <main id="stage">
+    <div id="transcript" aria-live="polite"></div>
+  </main>
+
+  <footer id="choices"></footer>
+
+  <div id="docoverlay" hidden>
+    <div id="docpanel" role="dialog" aria-modal="true" aria-labelledby="doctitle">
+      <h2 id="doctitle"></h2>
+      <p id="docsub"></p>
+      <div id="docbody"></div>
+      <button type="button" id="docclose">Put it back on the desk</button>
+    </div>
+  </div>
+</div>
+
+<script src="src/telemetry.js"></script>
+<script src="src/logic.js"></script>
+<script src="src/audio.js"></script>
+<script src="src/main.js"></script>
+</body>
+</html>

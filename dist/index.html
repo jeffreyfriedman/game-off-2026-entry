@@ -1,0 +1,2417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Outgoing Log</title>
+<style>
+/* The Outgoing Log — desk UI.
+ * Ink-dark gatehouse, lamp amber, fog grey. Bone text, serif for the
+ * written word. Layout rule (itch embed, scrolling="no"): the choices
+ * footer is always on screen; only the transcript scrolls, internally.
+ */
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; height: 100%; }
+body {
+  background: #0c0d0f;
+  color: #e8e2d4;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 16px;
+  line-height: 1.55;
+}
+#app { display: flex; flex-direction: column; height: 100vh; height: 100dvh; }
+
+/* ---- top bar ---- */
+#topbar {
+  flex: 0 0 auto;
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  padding: 8px 14px;
+  background: #131417;
+  border-bottom: 1px solid #2b2c30;
+}
+#brand { font-size: 15px; letter-spacing: 2px; color: #d9a441; white-space: nowrap; }
+#brandsub { display: block; font-size: 11px; letter-spacing: 1px; color: #8f8a7c; }
+#watchlabel { font-size: 13px; color: #b9b2a0; font-style: italic; white-space: nowrap; }
+#deskbar { display: flex; gap: 6px; margin-left: auto; }
+.deskbtn, #docclose {
+  font-family: inherit; font-size: 13px; cursor: pointer;
+  background: #1d1e22; color: #e8e2d4;
+  border: 1px solid #3a3b40; border-radius: 4px;
+  padding: 7px 10px; min-height: 36px;
+}
+.deskbtn:hover, #docclose:hover { border-color: #d9a441; color: #fff; }
+.deskbtn:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid #d9a441; outline-offset: 2px; }
+#settings { display: flex; align-items: center; gap: 14px; font-size: 12px; color: #b9b2a0; }
+#volwrap { display: flex; align-items: center; gap: 6px; }
+#volume { width: 90px; accent-color: #d9a441; }
+#tcwrap { display: flex; align-items: center; gap: 4px; cursor: pointer; }
+#tcdisc {
+  flex: 0 0 auto; margin: 0; padding: 4px 14px;
+  font-size: 11px; color: #767264; background: #101114;
+  border-bottom: 1px solid #222328;
+}
+
+/* ---- stage ---- */
+#stage { flex: 1 1 auto; overflow-y: auto; padding: 18px 14px 10px; }
+#transcript { max-width: 700px; margin: 0 auto; }
+.line { margin: 0 0 12px; }
+.line .who {
+  display: block; font-size: 11px; letter-spacing: 2px;
+  color: #8f8a7c; text-transform: uppercase; margin-bottom: 2px;
+}
+.line.narr { color: #cfc8b6; }
+.line.doc {
+  background: #17181c; border-left: 3px solid #d9a441;
+  padding: 8px 12px; color: #e8e2d4; font-style: italic;
+}
+.line.doc .who { color: #d9a441; }
+.line.maren .who { color: #a8c3a0; }
+.line.sella .who { color: #b7c9d9; }
+.line.vane .who { color: #d9a08a; }
+.line.rook .who { color: #c9b458; }
+.line.wick .who { color: #a79fd0; }
+.line.written { color: #e8e2d4; background: #14161a; padding: 8px 12px; border: 1px solid #2b2c30; }
+.line.endingtitle {
+  font-size: 24px; letter-spacing: 3px; color: #d9a441;
+  text-align: center; margin: 18px 0 14px;
+}
+.line.watchhead {
+  font-size: 12px; letter-spacing: 3px; color: #767264;
+  text-transform: uppercase; text-align: center; margin: 16px 0 12px;
+}
+.logdoc {
+  background: #17181c; border: 1px solid #3a3b40; padding: 14px 16px; margin: 0 0 14px;
+}
+.logdoc h3 { margin: 0 0 8px; font-size: 13px; letter-spacing: 2px; color: #d9a441; font-weight: normal; }
+.logdoc p { margin: 0 0 8px; font-style: italic; }
+.logdoc p:last-child { margin-bottom: 0; }
+.logdoc p.gap { color: #767264; }
+
+/* ---- choices ---- */
+#choices {
+  flex: 0 0 auto;
+  display: flex; flex-direction: column; gap: 8px;
+  max-height: 46%; overflow-y: auto;
+  padding: 12px 14px calc(12px + env(safe-area-inset-bottom));
+  background: #101114; border-top: 1px solid #2b2c30;
+}
+#choices .inner { max-width: 700px; margin: 0 auto; width: 100%; display: flex; flex-direction: column; gap: 8px; }
+.choice {
+  font-family: inherit; font-size: 15px; text-align: left; cursor: pointer;
+  background: #1d1e22; color: #e8e2d4;
+  border: 1px solid #3a3b40; border-radius: 5px;
+  padding: 11px 14px; min-height: 44px; width: 100%;
+}
+.choice:hover { border-color: #d9a441; background: #232428; }
+.choice .src { display: block; font-size: 12px; color: #8f8a7c; font-style: italic; margin-top: 2px; }
+.choice.go { border-color: #6b5a2e; background: #211d13; }
+.choice.gate { border-color: #57534a; }
+.choice.write { border-left: 3px solid #d9a441; }
+#writehead { max-width: 700px; margin: 0 auto; width: 100%; }
+#writehead h2 { font-size: 17px; font-weight: normal; color: #d9a441; margin: 0 0 2px; letter-spacing: 1px; }
+#writehead p { margin: 0; font-size: 14px; color: #b9b2a0; }
+
+/* ---- document overlay ---- */
+#docoverlay {
+  position: fixed; inset: 0; background: rgba(4, 4, 6, 0.82);
+  display: flex; align-items: center; justify-content: center; padding: 14px;
+}
+#docoverlay[hidden] { display: none; }
+#docpanel {
+  background: #17181c; border: 1px solid #3a3b40; border-radius: 6px;
+  max-width: 620px; width: 100%; max-height: 88%; overflow-y: auto;
+  padding: 20px 22px;
+}
+#docpanel h2 { margin: 0 0 2px; font-size: 18px; color: #d9a441; font-weight: normal; letter-spacing: 1px; }
+#docsub { margin: 0 0 12px; font-size: 12px; color: #8f8a7c; font-style: italic; }
+#docbody p { margin: 0 0 10px; font-style: italic; }
+#docclose { margin-top: 6px; }
+
+/* ---- small screens ---- */
+@media (max-width: 560px) {
+  body { font-size: 15px; }
+  #brand { font-size: 13px; }
+  #brandsub { display: none; }
+  #watchlabel { display: none; }
+  #deskbar { margin-left: 0; }
+  .deskbtn { padding: 6px 7px; font-size: 12px; }
+  #volume { width: 64px; }
+  #stage { padding: 12px 10px 8px; }
+  #choices { max-height: 52%; }
+}
+
+</style>
+</head>
+<body>
+<div id="app">
+  <header id="topbar">
+    <div id="brand">THE OUTGOING LOG <span id="brandsub">a night at Kestrel Gate</span></div>
+    <div id="watchlabel">The desk</div>
+    <nav id="deskbar" aria-label="Desk documents">
+      <button type="button" class="deskbtn" data-doc="daylog">Day log</button>
+      <button type="button" class="deskbtn" data-doc="weather">Weather note</button>
+      <button type="button" class="deskbtn" data-doc="tally">Tally sheet</button>
+    </nav>
+    <div id="settings">
+      <label id="volwrap">Sound
+        <input type="range" id="volume" min="0" max="100" step="1" value="50" aria-label="Volume">
+      </label>
+      <label id="tcwrap" title="Anonymous play statistics">
+        <input type="checkbox" id="tctoggle" checked> Stats
+      </label>
+    </div>
+  </header>
+  <p id="tcdisc">This game sends anonymous play statistics, including your country and region. Untick Stats in the bar above to opt out.</p>
+
+  <main id="stage">
+    <div id="transcript" aria-live="polite"></div>
+  </main>
+
+  <footer id="choices"></footer>
+
+  <div id="docoverlay" hidden>
+    <div id="docpanel" role="dialog" aria-modal="true" aria-labelledby="doctitle">
+      <h2 id="doctitle"></h2>
+      <p id="docsub"></p>
+      <div id="docbody"></div>
+      <button type="button" id="docclose">Put it back on the desk</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/*TELEMETRY-BEGIN*/
+/* Thoughtcrime telemetry bundle: generated by telemetry/sync-bundle.js
+ * from schema.js + snippet.js. Do not edit by hand. */
+/* Thoughtcrime Studios — anonymous telemetry schema (SINGLE SOURCE OF TRUTH).
+ *
+ * Shared by: the browser snippet (snippet.js), the Cloudflare Worker
+ * (worker.js via validate.js), the local mock endpoint, and the tests.
+ * Written in the same UMD style as the games' logic modules so it loads
+ * identically in a browser page, in Node, and bundled into the Worker.
+ *
+ * SCOPE (Jeffrey, corrected 2026-11-12): this system is NOT itch-only.
+ * It collects from the studio's games wherever they are hosted — the
+ * itch embed today, thoughtcrime.ai-hosted pages as they ship — into
+ * the one store, and the host an event came from is a first-class
+ * dimension of the data (see `host` below), never an assumption.
+ *
+ * Rules baked into this file:
+ *  - Events are coarse and predefined. There is no free-form event.
+ *  - Every field has an allowlist of exact values (bands, never raw
+ *    numbers, never text a player typed).
+ *  - An event must carry exactly its allowlisted fields: no missing,
+ *    no extras. Anything else is discarded by the validator.
+ *  - The envelope carries no PII: no IP, no user agent, no account id,
+ *    no persistent identifier. `session` is random per page load.
+ */
+(function (root, factory) {
+  var api = factory();
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+  root.TC_SCHEMA = api;
+})(typeof self !== 'undefined' ? self : this, function () {
+  'use strict';
+
+  /* Value bands. The client bucketing functions in snippet.js must only
+   * ever produce strings from these lists (the unit tests pin that). */
+  /* Play duration, measured as ACTIVE time: the snippet's clock pauses
+   * after 60 seconds without input, so an idle background tab does not
+   * inflate it. DUR names three things in this schema:
+   *   session_end.dur       the session's active play time (for The
+   *                         Idle Atlas the session IS the run)
+   *   blockreach game_over.dur   one game's active length
+   *   nine-minutes stand_end.band is that game's per-run duration
+   *                         (SURVIVAL_BANDS, the stand clock)
+   * Milestone timing: first_purchase.min is the active minutes into
+   * the session when the first purchase landed. */
+  var DUR_BANDS = ['<1m', '1-3m', '3-5m', '5-10m', '10-20m', '20-40m', '40m+'];
+  var MIN_BANDS = ['<1', '1-2', '2-5', '5-10', '10-20', '20-40', '40+'];
+  var SCORE_BANDS = ['0', '1-99', '100-299', '300-599', '600-999', '1000-1999', '2000+'];
+  var LINES_BANDS = ['0', '1-5', '6-15', '16-30', '31-60', '61+'];
+  var SURVIVAL_BANDS = ['<30s', '30-60s', '1-2m', '2-4m', '4-6m', '6-8m', '8-9m', '9m'];
+  var MODES = ['free', 'daily'];
+  var OUTCOMES = ['held', 'fell'];
+  var BOOLS = [true, false];
+  /* Catalog-wide bands (added 2026-11-02 for the full-catalog rollout).
+   * COUNT: generic small counts (fragments banked, deaths in a run).
+   * MATCH: a fixed-length stand/match clock up to a 10-minute cap
+   * (Ashen Front), where SURVIVAL's 9-minute stand bands do not fit. */
+  var COUNT_BANDS = ['0', '1', '2-3', '4-6', '7-10', '11+'];
+  var MATCH_BANDS = ['<1m', '1-2m', '2-4m', '4-6m', '6-8m', '8-10m', '10m'];
+  /* Nine Minutes deepened stand_end (2026-11-07, Jury Round 2
+   * amendment 3's telemetry rider, Valve): FALL_CAUSES is how a stand
+   * ended — 'none' when the transit was held. CONSOLE_MIN_BANDS is the
+   * console's lowest integrity across the run, banded like everything
+   * else; pickups and body_blocks ride the generic COUNT_BANDS. */
+  var FALL_CAUSES = ['console', 'officer', 'none'];
+  var CONSOLE_MIN_BANDS = ['0', '1-14', '15-29', '30-49', '50-74', '75-99', '100'];
+
+  /* Hesitation telemetry (2026-11-08, Jeffrey: "collect metrics on
+   * how long people pause on choices or actions as a proxy for
+   * confusion"). The generic event is decision_pause, available to
+   * every game that registers decision points in DECISION_POINTS
+   * below (Valve's refinement, adopted the same day: distinct
+   * decision points are measured distinctly, never pooled). PAUSE
+   * bands are seconds on the snippet's ACTIVE-time clock — the same
+   * clock session durations use — so a tab left open mid-choice
+   * stops accumulating after 60 s without input and cannot read as
+   * a marathon deliberation; anything past a minute of active
+   * thought lands in the capped top band. Raw milliseconds never
+   * exist on the wire. Outcomes: 'chosen' (the player committed)
+   * and 'abandoned' (the surface closed with no commitment). The
+   * metric is a CONFUSION PROXY for the slate review: a point whose
+   * pauses pile into the high bands, or whose abandons pile up, is
+   * a point players cannot parse. It is not engagement, not
+   * difficulty, and not deliberation quality — a fast point is not
+   * a good point, only an unhesitated one. */
+  var PAUSE_BANDS = ['<1s', '1-3s', '3-8s', '8-20s', '20-60s', '>60s'];
+  var PAUSE_OUTCOMES = ['chosen', 'abandoned'];
+
+  /* Session context bands (client-side, carried on session_start only,
+   * see CTX below). Screen is bucketed from the viewport width at load:
+   * small < 640, medium 640-1199, large >= 1200. Visits is the count of
+   * page loads on THIS device, bucketed; the raw count never leaves
+   * the device. */
+  var SCREEN_BANDS = ['small', 'medium', 'large'];
+  var VISIT_BANDS = ['1', '2-3', '4-9', '10+'];
+
+  /* session_start (and only session_start) carries a ctx object with
+   * exactly these keys:
+   *   tz        Intl timezone name, e.g. 'America/New_York' (TZ_RE)
+   *   lang      navigator.language primary tag only, e.g. 'en' (LANG_RE)
+   *   touch     boolean: the device reports touch input
+   *   screen    SCREEN_BANDS bucket of the viewport width
+   *   returning boolean: this device has loaded a game page before
+   *   visits    VISIT_BANDS bucket of the on-device visit counter
+   * The returning/visits signal is computed from a localStorage counter
+   * that lives on the player's device. No identifier of any kind is
+   * derived from it or sent; the per-load session id stays random. */
+  var CTX_KEYS = ['tz', 'lang', 'touch', 'screen', 'returning', 'visits'];
+
+  /* Fields the WORKER adds to every stored row. None of these come
+   * from the client payload, and none are accepted from it:
+   *   country, region, cf_timezone  from request.cf (Cloudflare's
+   *     edge view of the connection). The IP address itself is never
+   *     read or stored; city and coordinates are never taken.
+   *   browser_family, os_family, device_class  coarse buckets parsed
+   *     from the User-Agent header in the Worker. The raw UA string
+   *     and all version numbers are discarded in the same breath. */
+  var BROWSER_FAMILIES = ['Chrome', 'Firefox', 'Safari', 'Edge', 'Opera', 'other'];
+  var OS_FAMILIES = ['Windows', 'macOS', 'Linux', 'Android', 'iOS', 'other'];
+  var DEVICE_CLASSES = ['desktop', 'mobile', 'tablet'];
+
+  /* Hosts (added 2026-11-13, Jeffrey's 2026-11-12 scope correction).
+   * `host` is an OPTIONAL envelope key: when present its value must
+   * be one of these exact strings, naming where the game page was
+   * hosted when the event fired. The snippet states it explicitly,
+   * derived from the page's own hostname (itch embed domains read
+   * 'itch', thoughtcrime.ai reads 'thoughtcrime.ai'); on any other
+   * hostname (local files, test rigs) it omits the key rather than
+   * guessing. Events WITHOUT the key are pre-field builds: every
+   * build shipped before 2026-11-13 ran only in the itch embed, but
+   * the row itself does not say so, so the rollup reports a missing
+   * host under 'unknown' and never silently re-labels old rows. */
+  var HOSTS = ['itch', 'thoughtcrime.ai'];
+
+  /* Probe marker (added 2026-11-13). `probe` is an OPTIONAL envelope
+   * key whose only legal value is boolean true. It marks SYNTHETIC
+   * traffic: our own audit/probe harnesses loading real game builds
+   * (headless surface audits, click probes, served-build checks),
+   * whose page loads fire real events at the live endpoint. On
+   * 2026-11-10/11 unmarked probe sweeps left orphan session_end rows
+   * for some 40 game slugs in the audience data. Harnesses set the
+   * marker at the source (snippet: init {probe:true} or
+   * window.TC_TELEMETRY_PROBE before page load); the Worker stores
+   * it in the events.synthetic column, and the rollup counts marked
+   * rows separately and excludes them from every audience figure.
+   * Absence means real traffic; false is not a legal value. */
+
+  var COMMON_EVENTS = {
+    session_start: {},
+    session_end: { dur: DUR_BANDS },
+    /* Opt-out signal (added 2026-11-13): emitted ONCE by the snippet
+     * at the moment a player turns telemetry off, before the client
+     * goes silent — it is the only way the server can ever learn an
+     * opt-out happened. Carries no fields. The rollup reports an
+     * opt-out rate (opt_out events per session) per game and day so
+     * the weekly review can finally measure it. Opting back in emits
+     * nothing. */
+    opt_out: {}
+  };
+
+  var GAMES = {
+    'idle-atlas': {
+      events: {
+        first_purchase: { min: MIN_BANDS },
+        tier_up: { tier: ['1', '2', '3', '4'] },
+        meteor_used: {},
+        expedition_launch: {},
+        /* Clockwork Mount milestone (added 2026-11-13): the funnel
+         * step the weekly review kept asking for and the schema did
+         * not have. Fires once per session, at the moment the session
+         * first HOLDS a Clockwork Mount — the buy that takes the
+         * owned count from 0, or at init when a loaded save already
+         * holds one. Wired in the Atlas source 2026-11-13; it reaches
+         * players with the graduation build (v14), not before. */
+        clockwork_mount: {},
+        /* Distinct decisions per session (Round 2 amendment 8,
+         * registered 2026-11-09 with the Round 3 repair patch): the
+         * count of DISTINCT decision keys the session has exercised
+         * (each producer bought, each upgrade fitted, each tier
+         * raised, the shower, an Expedition), banded on the generic
+         * COUNT bands. The game re-sends on every band increase; the
+         * session's reading is its highest band. */
+        decisions: { count: COUNT_BANDS }
+      }
+    },
+    'blockreach': {
+      events: {
+        game_start: { mode: MODES },
+        daily_board_start: {},
+        game_over: { mode: MODES, score: SCORE_BANDS, lines: LINES_BANDS, dur: DUR_BANDS }
+      }
+    },
+    'nine-minutes': {
+      events: {
+        stand_start: { first_run: BOOLS },
+        stand_end: { outcome: OUTCOMES, band: SURVIVAL_BANDS, first_run: BOOLS,
+                     cause: FALL_CAUSES, console_min: CONSOLE_MIN_BANDS,
+                     pickups: COUNT_BANDS, body_blocks: COUNT_BANDS }
+      }
+    },
+
+    /* ---- Full-catalog rollout (2026-11-02). One entry per built game.
+     * Every set is the uniform session pair (COMMON_EVENTS) plus 2-4
+     * events drawn from the game's own run structure: outcomes,
+     * survival/completion bands, progress milestones. Values are
+     * always bands or the game's own fixed categories, never raw
+     * numbers and never text. ---- */
+
+    /* Batch 1 */
+    'the-unwatched-map': { // one 600 s night; chart 6 segments, then transmit
+      events: {
+        segment_charted: { segments: ['1', '2', '3', '4', '5', '6'] },
+        night_end: { outcome: ['transmitted', 'road-lost', 'night-ended'], dur: DUR_BANDS }
+      }
+    },
+    'the-cartographers-hand': { // roguelike deckbuilder: 3 crossings + gate
+      events: {
+        crossing_banked: { crossing: ['1', '2', '3'] },
+        run_end: { outcome: ['won', 'lost'], dur: DUR_BANDS }
+      }
+    },
+    'the-keepers-furrow': { // 28 days, 4 weeks, sell 400 g of Winter Stores
+      events: {
+        week_complete: { week: ['1', '2', '3', '4'] },
+        season_end: { outcome: ['quota-met', 'quota-missed'], stores: ['<100', '100-199', '200-299', '300-399', '400-519', '520+'] }
+      }
+    },
+    'a-death-at-meridian-reach': { // locked-room mystery: fill the board, file a verdict
+      events: {
+        board_complete: {},
+        verdict_filed: { verdict: ['true-mechanism', 'wrong-room', 'sealed'] }
+      }
+    },
+    'the-penultimate-inn': { // seven days, no fail state; the week is the arc
+      events: {
+        day_complete: { day: ['1', '2', '3', '4', '5', '6', '7'] },
+        week_complete: {}
+      }
+    },
+    'unfiled': { // survivors-like: 14-minute run, horn win or file the Accumulation
+      events: {
+        evolution_reached: {},
+        run_end: { outcome: ['horn', 'filed', 'fell'], min: MIN_BANDS }
+      }
+    },
+    'in-my-own-hand': { // point-and-click: three nights, two endings
+      events: {
+        night_complete: { night: ['1', '2', '3'] },
+        ending_reached: { ending: ['amend', 'silence'] }
+      }
+    },
+    'low-water-rising': { // fishing: outings, catches, a 26-entry journal
+      events: {
+        catch_made: { kind: ['fish', 'object'] },
+        outing_end: { catches: ['0', '1', '2-3', '4+'] },
+        journal_complete: {}
+      }
+    },
+
+    /* Batch 2/3 candidates (schema ready; wiring follows in later batches) */
+    'seven-nights': { // Seven Nights at the Last Fire: survive all 7 nights
+      events: {
+        night_survived: { night: ['1', '2', '3', '4', '5', '6', '7'] },
+        run_end: { outcome: ['won', 'lost'], cause: ['survived', 'fire', 'hunger', 'cold', 'shelter'] }
+      }
+    },
+    'supplies-for-eight': { // six legs, three endings
+      events: {
+        leg_complete: { leg: ['1', '2', '3', '4', '5', '6'] },
+        voyage_end: { ending: ['all-nine', 'manifest-holds', 'road-keeps'] }
+      }
+    },
+    'ashen-front': { // micro-RTS: hold 10 minutes until the convoy
+      events: {
+        wave_reached: { wave: ['1-3', '4-6', '7-9', '10+'] },
+        stand_end: { outcome: OUTCOMES, band: MATCH_BANDS }
+      }
+    },
+    'letters-from-meridian': { // visual novel: three letters decided
+      events: {
+        letter_decided: { letter: ['1', '2', '3'] },
+        story_end: { ending: ['ashes', 'lastpost', 'knew'] }
+      }
+    },
+    'the-errants-portion': { // ARPG: cross the field, kill the Tollkeeper, take the gate
+      events: {
+        gate_reached: {},
+        run_end: { outcome: ['won', 'died'], dur: DUR_BANDS }
+      }
+    },
+    'the-manifest-of-the-vessari': { // document-audit mystery: sign the manifest
+      events: {
+        manifest_signed: { ending: ['true-manifest', 'paper-over-truth', 'held-list', 'kind-error', 'signed-page', 'pursers-version', 'kin-left-ashore'], aboard: ['<35', '35-37', '38-39', '40'] }
+      }
+    },
+    'the-transit-logs': { // sequence-reconstruction puzzle: file the ending
+      events: {
+        case_filed: { ending: ['true', 'clean', 'refuse'] }
+      }
+    },
+    'the-drowned-archive': { // grid roguelike: descend, bank fragments, death ends the dive
+      events: {
+        fragment_banked: {},
+        floor_reached: { floor: ['1', '2', '3', '4', '5', '6+'] },
+        dive_end: { floors: ['0', '1', '2', '3', '4', '5', '6+'], fragments: COUNT_BANDS }
+      }
+    },
+    'daily-lexicon': { // daily word game: six guesses, daily or practice
+      events: {
+        puzzle_end: { mode: ['daily', 'practice'], outcome: ['won', 'lost'], guesses: ['1', '2', '3', '4', '5', '6', 'x'] }
+      }
+    },
+    'flak-season': { // vertical shmup: three movements and the Gate Warden
+      events: {
+        run_start: { start: ['full', 'm2', 'm3'] },
+        movement_reached: { movement: ['2', '3', 'warden'] },
+        run_end: { outcome: ['cleared', 'fell'], movement: ['1', '2', '3', 'warden'], chain: ['0-9', '10-24', '25-49', '50-99', '100+'], dur: DUR_BANDS }
+      }
+    },
+    'the-garrison-hour': { // boomer-shooter FPS: seal-key hunt, then hold the Gate Hall
+      events: {
+        run_start: {},
+        court_entered: {},
+        key_taken: { count: ['1', '2', '3'] },
+        hall_reached: {},
+        wave_reached: { wave: ['1', '2', '3', '4'] },
+        gate_opened: {},
+        player_died: { cause: ['husk', 'mite', 'mite-drop', 'lampier-bolt', 'bailiff-slam'] },
+        run_end: { outcome: ['through-the-gate', 'gave-up'], deaths: ['0', '1-2', '3-5', '6+'], dur: DUR_BANDS }
+      }
+    },
+    'the-locktender': { // falling-sand lock-keeping: four boats through one storm night, keeper in the grid
+      events: {
+        run_start: {},
+        passage_reached: { passage: ['2', '3', '4'] },
+        incident_seen: { kind: ['jam', 'leak', 'spill', 'surge', 'lamp'] },
+        run_end: { outcome: ['dawn', 'house-lost'], passages: ['0', '1', '2', '3', '4'], dur: DUR_BANDS }
+      }
+    },
+    'where-i-cannot-reach': { // companionship journey: lock-keeper and the construct who can reach
+      events: {
+        chamber_reached: { chamber: ['low', 'walk', 'middle', 'high'] },
+        state_hold_used: {},
+        sustain_seen: { count: COUNT_BANDS },
+        niche_read: { read: ['yes', 'no'] },
+        filing_choice: { choice: ['crew', 'equipment'] },
+        run_end: { outcome: ['crew', 'equipment'], dur: DUR_BANDS }
+      }
+    },
+    'what-the-pack-does': { // async auto-battler: pack items on a grid, fight authored ghost kits
+      events: {
+        run_start: {},
+        fight_end: { crossing: ['1', '2', '3', '4', '5', '6', '7'], outcome: ['won', 'lost'], dur: DUR_BANDS },
+        crossing_reached: { crossing: ['2', '3', '4', '5', '6', '7'] },
+        purchase_made: { family: ['points', 'wardwork', 'hearth', 'fever', 'quickhands', 'charms'] },
+        run_end: { outcome: ['crossed', 'filed'], crossing: ['1', '2', '3', '4', '5', '6', '7'], dur: DUR_BANDS }
+      }
+    },
+    'the-toll-engine': { // casino-horror roguelite: seven tolls at the engine's own reels
+      events: {
+        run_start: {},
+        round_reached: { round: ['2', '3', '4', '5', '6', '7'] },
+        charm_bought: { charm: ['counterweight', 'oiledlever', 'secondlook', 'lampoil', 'bellmark', 'chartweight', 'starledger', 'loupe', 'softspring', 'tithebox', 'deadmans', 'polished', 'courtesy', 'namefiled'] },
+        loan_taken: { loans: ['1', '2', '3'] },
+        full_toll: { choice: ['taken', 'refused'] },
+        run_end: { outcome: ['crossing', 'left', 'staying'], round: ['1', '2', '3', '4', '5', '6', '7'], dur: DUR_BANDS }
+      }
+    },
+    'the-customs-roll': { // dice-builder roguelite: nine tables, weighed on the brass scale
+      events: {
+        run_start: { mode: ['free', 'daily'] },
+        crossing_reached: { crossing: ['2', '3'] },
+        purchase_made: { kind: ['weight', 'chart', 'chisel', 'die', 'license'] },
+        run_end: { outcome: ['won', 'lost'], table: ['1', '2', '3', '4', '5', '6', '7', '8', '9'], dur: DUR_BANDS }
+      }
+    },
+    'wayline-dash': { // endless racer: stretches survived before the wreck
+      events: {
+        run_end: { stretches: ['0', '1', '2-3', '4-5', '6-7', '8+'], distance: ['<500m', '500-1500m', '1500-3000m', '3000-6000m', '6000m+'] }
+      }
+    },
+    'countersign': { // versus-puzzle duels against three AI tiers
+      events: {
+        chain_made: { chain: ['2', '3', '4', '5+'] },
+        duel_end: { tier: ['ensign', 'lieutenant', 'captain'], outcome: ['won', 'lost'], dur: DUR_BANDS }
+      }
+    },
+    'the-great-alignment': { // match-3: twelve levels, star ratings
+      events: {
+        level_complete: { level: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'], stars: ['0', '1', '2', '3'] }
+      }
+    },
+    'the-copyists-gate': { // desk game: a six-day week, inspections, seven endings
+      events: {
+        day_complete: { day: ['1', '2', '3', '4', '5', '6'] },
+        inspection: { day: ['3', '5'], violations: ['0', '1', '2', '3'] },
+        week_end: { ending: ['offices-copyist', 'last-name', 'gate-kept-true', 'gate-taken', 'clean-hands', 'last-out', 'gate-closes'] }
+      }
+    },
+    'the-outgoing-log': { // jam game (Game Off 2026): one night shift, write the log at dawn
+      events: {
+        watch_complete: { watch: ['1', '2', '3', '4', '5'] },
+        gate_decision: { gate: ['maren', 'vane'], choice: ['opened', 'barred'] },
+        log_written: { ending: ['gate-closed', 'rook-carries-it', 'pell-named', 'sella-named', 'record-stays-open'] }
+      }
+    },
+    'the-drowned-inquest': { // mystery: press five witnesses, lay one accusation
+      events: {
+        witness_pressed: {},
+        accusation: { result: ['record-holds', 'name-without-proof', 'wrong-name'] }
+      }
+    },
+    'the-quiet-station': { // one night relaying messages; four verdicts
+      events: {
+        message_resolved: { choice: ['true', 'softened', 'hold', 'log'] },
+        night_end: { verdict: ['carried-it-all', 'gentle-hand', 'drawer', 'balance'] }
+      }
+    },
+    'the-last-lookout': { // five days of watches; three verdicts
+      events: {
+        day_complete: { day: ['1', '2', '3', '4', '5'] },
+        week_end: { verdict: ['nothing-unseen', 'true-log', 'gaps-record'], lost: ['0', '1', '2', '3+'] }
+      }
+    },
+    'the-sunken-reach': { // metroidvania descent: depth rows and pickups
+      events: {
+        depth_reached: { depth: ['0', '1', '2', '3', '4'] },
+        pickup_got: { item: ['lamp', 'fins', 'fragment'] }
+      }
+    },
+    'meridian': { // MERIDIAN M1 greybox: shift cards and the gate demo
+      events: {
+        card_viewed: { card: ['manifest', 'gate-console'] },
+        demo_fired: {}
+      }
+    },
+    'the-dawn-watch': { // PAUSED tier: tower defense, ten waves (schema ready)
+      events: {
+        wave_cleared: { wave: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'] },
+        watch_end: { outcome: ['won', 'lost'], waves: ['0-3', '4-6', '7-9', '10'] }
+      }
+    },
+    'waystation-keeper': { // PAUSED tier: seven days of keeping (schema ready)
+      events: {
+        day_complete: { day: ['1', '2', '3', '4', '5', '6', '7'] },
+        week_end: { verdict: ['lamp-held', 'door-shut', 'thin-week', 'other'] }
+      }
+    },
+    'the-burning-road': { // PAUSED tier: runner, three levels, 8 fragments each (schema ready)
+      events: {
+        level_complete: { level: ['1', '2', '3'], fragments: ['0-2', '3-5', '6-7', '8'] },
+        run_end: { outcome: ['finished', 'burned'], level: ['1', '2', '3'] }
+      }
+    },
+    'the-third-gate': { // IN BUILD (schema from its design doc; repo untouched)
+      events: {
+        gate_reached: { gate: ['1', '2', '3'] },
+        run_end: { outcome: ['cleared', 'ended'], grade: ['s', 'a', 'b', 'c', 'd'], deaths: COUNT_BANDS }
+      }
+    },
+    'the-tollway': { // Wave 11 miniature open world: three days in a valley, then the aftermath
+      events: {
+        place_discovered: { place: ['aulbridge', 'new-bridge', 'old-bridge', 'wardens-tower', 'mill', 'shepherds-hollow', 'mere-chapel', 'smugglers-stair', 'grave-field', 'depot'] },
+        stride_stage: { stage: ['1', '2', '3'] },
+        filing_filed: { ending: ['filed-true', 'office-price', 'bell-rung', 'lapsed'] },
+        day_complete: { day: ['1', '2', '3'] }
+      }
+    }
+  };
+
+  /* Decision points for the hesitation event (2026-11-08). A game
+   * registers its choice/action surfaces here, one stable string id
+   * per distinct decision — the id names the SURFACE, not the
+   * option picked, and a point's meaning must never be recycled for
+   * a different decision later (the series reads across builds).
+   * Registration is the only per-game step: eventsFor() then offers
+   * decision_pause {point, band, outcome} for that game, the
+   * validator allowlists exactly these ids, and the snippet's
+   * TC.decision(point) refuses unregistered ids client-side too.
+   * First registrations are the four games Jeffrey playtested on
+   * 2026-11-08 plus the worked example (The Locktender); wiring
+   * notes for the four live in HESITATION-INTEGRATION-2026-11-08.md.
+   * WICR's two prompts are two points on purpose (Valve). */
+  var DECISION_POINTS = {
+    'where-i-cannot-reach': ['filing_prompt', 'manifest_prompt'],
+    'the-toll-engine': ['lever_pull', 'shop_buy'],
+    'supplies-for-eight': ['name_calling', 'niche_action', 'sickbay_niche'],
+    'the-copyists-gate': ['desk_judgment'],
+    'the-outgoing-log': ['maren_crossing', 'vane_crossing', 'outgoing_log'],
+    'the-locktender': ['title_start', 'log_writing'],
+    'a-death-at-meridian-reach': ['filing_decision']
+  };
+
+  /* Full event table for one game: common events + its own. */
+  function eventsFor(game) {
+    var out = {};
+    var k;
+    for (k in COMMON_EVENTS) out[k] = COMMON_EVENTS[k];
+    if (GAMES[game]) for (k in GAMES[game].events) out[k] = GAMES[game].events[k];
+    var points = DECISION_POINTS[game];
+    if (points && points.length) {
+      out.decision_pause = { point: points.slice(), band: PAUSE_BANDS, outcome: PAUSE_OUTCOMES };
+    }
+    return out;
+  }
+
+  return {
+    VERSION: 1,
+    GAMES: Object.keys(GAMES),
+    HOSTS: HOSTS,
+    COMMON_EVENTS: COMMON_EVENTS,
+    GAME_EVENTS: GAMES,
+    DECISION_POINTS: DECISION_POINTS,
+    eventsFor: eventsFor,
+    BANDS: {
+      DUR: DUR_BANDS, MIN: MIN_BANDS, SCORE: SCORE_BANDS,
+      LINES: LINES_BANDS, SURVIVAL: SURVIVAL_BANDS,
+      SCREEN: SCREEN_BANDS, VISITS: VISIT_BANDS,
+      COUNT: COUNT_BANDS, MATCH: MATCH_BANDS,
+      CONSOLE_MIN: CONSOLE_MIN_BANDS, PAUSE: PAUSE_BANDS,
+      PAUSE_OUTCOMES: PAUSE_OUTCOMES
+    },
+    CTX_KEYS: CTX_KEYS,
+    SERVER_FIELDS: {
+      BROWSER_FAMILIES: BROWSER_FAMILIES,
+      OS_FAMILIES: OS_FAMILIES,
+      DEVICE_CLASSES: DEVICE_CLASSES
+    },
+    /* Envelope field formats, enforced by validate.js. */
+    BUILD_RE: /^[A-Za-z0-9][A-Za-z0-9._-]{0,31}$/,
+    SESSION_RE: /^[a-f0-9]{16}$/,
+    TS_HOUR_RE: /^\d{4}-\d{2}-\d{2}T\d{2}:00:00Z$/,
+    TZ_RE: /^[A-Za-z][A-Za-z0-9_+-]*(\/[A-Za-z0-9_+-]+){0,2}$/,
+    LANG_RE: /^[a-z]{2,3}$/,
+    /* 'host' and 'probe' are the only optional envelope keys (both
+     * added 2026-11-13): allowed when present, never required. Every
+     * other key must match the base set exactly as before. */
+    ENVELOPE_KEYS: ['game', 'build', 'event', 'ts_hour', 'session', 'fields', 'ctx', 'host', 'probe']
+  };
+});
+
+/* Thoughtcrime Studios — anonymous telemetry client snippet.
+ *
+ * Plain JS, no dependencies. Expects TC_SCHEMA (schema.js) to have been
+ * inlined before it; the game builds inline schema + this file as one
+ * bundle (see sync-bundle.js). Exposes window.TC:
+ *
+ *   TC.init({ game: 'idle-atlas', build: '2026-11-02', demo: false })
+ *   TC.send('tier_up', { tier: '2' })
+ *   TC.decision('filing_prompt') -> handle     (hesitation timing)
+ *     handle.commit()    the player chose; sends decision_pause
+ *     handle.abandon()   the surface closed unchosen; sends it too
+ *   TC.optedOut() / TC.setOptOut(true|false)   (settings toggle)
+ *   TC.buckets.score(450) -> '300-599'         (allowlisted bands only)
+ *
+ * Guarantees:
+ *  - Fire-and-forget. Every entry point is guarded; a failed ping can
+ *    never throw into the game or block it.
+ *  - Demo mode (?demo=1) sends NOTHING: init with demo:true disables
+ *    the client entirely.
+ *  - The player can opt out (settings toggle, persisted in
+ *    localStorage). Default is on, with the disclosure line shown next
+ *    to the toggle in each game. Turning it OFF sends exactly one
+ *    final event, opt_out, before the client goes silent (2026-11-13):
+ *    it is the only way the studio can measure how many players opt
+ *    out. Turning it back on sends nothing.
+ *  - Nothing identifying is ever put on the wire: the envelope is
+ *    {game, build, event, ts_hour, session, fields} where session is
+ *    random per page load and fields only carry allowlisted bands.
+ *  - Every event states its HOST explicitly (2026-11-13, Jeffrey's
+ *    scope correction: the system serves itch-hosted AND
+ *    thoughtcrime.ai-hosted games). The host is derived from the
+ *    page's own hostname (itch embed domains -> 'itch',
+ *    thoughtcrime.ai -> 'thoughtcrime.ai'); an init {host} wins over
+ *    derivation, and on any other hostname the key is omitted rather
+ *    than guessed.
+ *  - PROBE traffic (our own audit/probe harnesses driving real
+ *    builds) marks itself at the source: init {probe:true} or
+ *    window.TC_TELEMETRY_PROBE = true set before the page loads.
+ *    Every payload then carries probe:true and the analysis side
+ *    excludes it from audience figures.
+ *  - The endpoint defaults to the studio's live telemetry Worker
+ *    (DEFAULT_ENDPOINT below, wired 2026-11-02). It can be overridden
+ *    per page via window.TC_TELEMETRY_ENDPOINT (used by the local
+ *    tests) or passed to init as {endpoint}. If the resolved endpoint
+ *    is empty, the client stays silent.
+ */
+(function () {
+  'use strict';
+
+  /* Live endpoint (custom domain t.thoughtcrime.ai; the original
+   * workers.dev subdomain was retired 2026-11-09 and must never come
+   * back — the game repos' vendored bundles are the reference). */
+  var DEFAULT_ENDPOINT = 'https://t.thoughtcrime.ai/collect';
+  var OPTOUT_KEY = 'tcTelemetryOptOut';
+  var VISITS_KEY = 'tcVisitCount'; // on-device page-load counter, see collectCtx
+  var cfg = null;          // set by init()
+  var sessionId = null;    // random per page load
+  var startedAt = 0;       // ms epoch of init, for session_end duration
+  var endSent = false;     // session_end fires at most once
+
+  function lsGet(k) {
+    try { return window.localStorage.getItem(k); } catch (e) { return null; }
+  }
+  function lsSet(k, v) {
+    try { window.localStorage.setItem(k, v); } catch (e) {}
+  }
+
+  function optedOut() { return lsGet(OPTOUT_KEY) === '1'; }
+  function setOptOut(off) {
+    /* Turning OFF sends one final opt_out event BEFORE the flag is
+     * persisted (2026-11-13): send() checks optedOut(), so the emit
+     * has to happen while the client is still enabled, and it is the
+     * last thing this client ever transmits until the player opts
+     * back in. If the client was never initialized on this page
+     * (a settings toggle touched before init, or demo mode) there is
+     * no session to attach the event to and nothing is sent. */
+    try {
+      if (off && cfg && !optedOut()) send('opt_out', {});
+    } catch (e) { /* the toggle itself must never break */ }
+    lsSet(OPTOUT_KEY, off ? '1' : '0');
+  }
+
+  /* Host derivation (2026-11-13): the page states where it is hosted,
+   * from its own hostname. itch serves game embeds from itch.io /
+   * html-classic.itch.zone; our own pages live on thoughtcrime.ai.
+   * Anything else (localhost, file://, a test rig) returns null and
+   * the envelope simply omits the key, which the schema documents as
+   * the pre-field/unknown case. */
+  function detectHost() {
+    try {
+      var h = (window.location && window.location.hostname || '').toLowerCase();
+      if (!h) return null;
+      if (h === 'thoughtcrime.ai' || h.slice(-16) === '.thoughtcrime.ai') return 'thoughtcrime.ai';
+      if (h === 'itch.io' || h.slice(-8) === '.itch.io' ||
+          h === 'itch.zone' || h.slice(-10) === '.itch.zone') return 'itch';
+      return null;
+    } catch (e) { return null; }
+  }
+
+  function enabled() {
+    return !!cfg && !cfg.demo && !optedOut() && !!cfg.endpoint;
+  }
+
+  function newSessionId() {
+    var hex = '';
+    try {
+      var bytes = new Uint8Array(8);
+      (window.crypto || {}).getRandomValues
+        ? window.crypto.getRandomValues(bytes)
+        : bytes.forEach(function (_, i) { bytes[i] = Math.floor(Math.random() * 256); });
+      for (var i = 0; i < bytes.length; i++) {
+        hex += ('0' + bytes[i].toString(16)).slice(-2);
+      }
+    } catch (e) {
+      for (var j = 0; j < 16; j++) hex += Math.floor(Math.random() * 16).toString(16);
+    }
+    return hex;
+  }
+
+  function tsHour() {
+    return new Date().toISOString().slice(0, 13) + ':00:00Z';
+  }
+
+  /* Bucketing: raw numbers in, allowlisted band strings out. The band
+   * lists live in schema.js; the unit tests pin that every value these
+   * functions can return is in the schema. */
+  var buckets = {
+    duration: function (sec) {
+      if (sec < 60) return '<1m';
+      if (sec < 180) return '1-3m';
+      if (sec < 300) return '3-5m';
+      if (sec < 600) return '5-10m';
+      if (sec < 1200) return '10-20m';
+      if (sec < 2400) return '20-40m';
+      return '40m+';
+    },
+    minutesIn: function (sec) {
+      if (sec < 60) return '<1';
+      if (sec < 120) return '1-2';
+      if (sec < 300) return '2-5';
+      if (sec < 600) return '5-10';
+      if (sec < 1200) return '10-20';
+      if (sec < 2400) return '20-40';
+      return '40+';
+    },
+    score: function (n) {
+      if (n <= 0) return '0';
+      if (n < 100) return '1-99';
+      if (n < 300) return '100-299';
+      if (n < 600) return '300-599';
+      if (n < 1000) return '600-999';
+      if (n < 2000) return '1000-1999';
+      return '2000+';
+    },
+    lines: function (n) {
+      if (n <= 0) return '0';
+      if (n <= 5) return '1-5';
+      if (n <= 15) return '6-15';
+      if (n <= 30) return '16-30';
+      if (n <= 60) return '31-60';
+      return '61+';
+    },
+    survival: function (sec) {
+      if (sec < 30) return '<30s';
+      if (sec < 60) return '30-60s';
+      if (sec < 120) return '1-2m';
+      if (sec < 240) return '2-4m';
+      if (sec < 360) return '4-6m';
+      if (sec < 480) return '6-8m';
+      if (sec < 540) return '8-9m';
+      return '9m';
+    },
+    count: function (n) {
+      if (n <= 0) return '0';
+      if (n === 1) return '1';
+      if (n <= 3) return '2-3';
+      if (n <= 6) return '4-6';
+      if (n <= 10) return '7-10';
+      return '11+';
+    },
+    integrity: function (v) {
+      v = Math.floor(v);
+      if (v <= 0) return '0';
+      if (v < 15) return '1-14';
+      if (v < 30) return '15-29';
+      if (v < 50) return '30-49';
+      if (v < 75) return '50-74';
+      if (v < 100) return '75-99';
+      return '100';
+    },
+    match: function (sec) {
+      if (sec < 60) return '<1m';
+      if (sec < 120) return '1-2m';
+      if (sec < 240) return '2-4m';
+      if (sec < 360) return '4-6m';
+      if (sec < 480) return '6-8m';
+      if (sec < 600) return '8-10m';
+      return '10m';
+    },
+    pause: function (sec) {
+      if (sec < 1) return '<1s';
+      if (sec < 3) return '1-3s';
+      if (sec < 8) return '3-8s';
+      if (sec < 20) return '8-20s';
+      if (sec < 60) return '20-60s';
+      return '>60s';
+    },
+    screen: function (widthPx) {
+      if (widthPx < 640) return 'small';
+      if (widthPx < 1200) return 'medium';
+      return 'large';
+    },
+    visits: function (count) {
+      if (count <= 1) return '1';
+      if (count <= 3) return '2-3';
+      if (count <= 9) return '4-9';
+      return '10+';
+    }
+  };
+
+  /* Session context, computed once at init and sent on session_start
+   * only. Everything here is coarse: a timezone NAME (never an offset
+   * plus location lookup, never the Geolocation API), the primary
+   * language tag (never the full locale string), a touch boolean, a
+   * screen-size bucket, and the returning-player signal.
+   *
+   * The returning signal comes from a page-load counter kept in
+   * localStorage ON THIS DEVICE. It is incremented here, once per
+   * load, and only its bucket ever leaves the device (inside ctx).
+   * No identifier is derived from it: the session id stays random
+   * per load and cannot be linked to the counter. If the player has
+   * opted out, init returns before this runs and the counter is not
+   * touched; demo mode never reaches here either. */
+  function collectCtx() {
+    /* Per-game counter key: on the itch embed domain all our games
+     * share one origin, so a single shared key would blend every
+     * game's visit counts together. Keyed by game, the signal reads
+     * as intended: has THIS game been loaded on this device before. */
+    var key = VISITS_KEY + ':' + (cfg ? cfg.game : '');
+    var count = parseInt(lsGet(key) || '0', 10);
+    if (isNaN(count) || count < 0) count = 0;
+    count += 1;
+    lsSet(key, String(count));
+
+    var tz = 'UTC';
+    try {
+      tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+    } catch (e) { /* keep UTC */ }
+
+    var lang = 'en';
+    try {
+      var primary = (navigator.language || '').split('-')[0].toLowerCase();
+      if (/^[a-z]{2,3}$/.test(primary)) lang = primary;
+    } catch (e) { /* keep en */ }
+
+    var touch = false;
+    try {
+      touch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+    } catch (e) { /* keep false */ }
+
+    var width = 0;
+    try { width = window.innerWidth || 0; } catch (e) { /* keep 0 */ }
+
+    return {
+      tz: tz,
+      lang: lang,
+      touch: !!touch,
+      screen: buckets.screen(width),
+      returning: count > 1,
+      visits: buckets.visits(count)
+    };
+  }
+
+  function transmit(payload) {
+    var body = JSON.stringify(payload);
+    try {
+      if (navigator && typeof navigator.sendBeacon === 'function') {
+        if (navigator.sendBeacon(cfg.endpoint, body)) return;
+      }
+    } catch (e) { /* fall through to fetch */ }
+    try {
+      if (typeof window.fetch === 'function') {
+        window.fetch(cfg.endpoint, {
+          method: 'POST',
+          body: body,
+          keepalive: true,
+          headers: { 'Content-Type': 'text/plain;charset=UTF-8' }
+        }).catch(function () {});
+      }
+    } catch (e) { /* fire-and-forget: silence is the correct failure mode */ }
+  }
+
+  function send(event, fields, ctx) {
+    try {
+      if (!enabled()) return;
+      if (typeof TC_SCHEMA === 'undefined') return;
+      var table = TC_SCHEMA.eventsFor(cfg.game);
+      if (!(event in table)) return; // unknown event for this game: drop
+      var payload = {
+        game: cfg.game,
+        build: cfg.build,
+        event: event,
+        ts_hour: tsHour(),
+        session: sessionId,
+        fields: fields || {}
+      };
+      if (ctx) payload.ctx = ctx; // session_start only; callers pass none otherwise
+      if (cfg.host) payload.host = cfg.host;   // stated explicitly, never guessed
+      if (cfg.probe) payload.probe = true;     // synthetic-traffic marker
+      transmit(payload);
+    } catch (e) { /* never throw into the game */ }
+  }
+
+  /* Active-time clock. Play duration in this system means ACTIVE
+   * time: the clock pauses once input has been silent for 60 seconds,
+   * so a tab left open in the background does not inflate session or
+   * run durations. Input means pointer, touch, wheel, or keys; the
+   * listeners only stamp a timestamp, they never read what the input
+   * was. activeSeconds() is also exposed so games can measure per-run
+   * durations on the same clock (Blockreach game_over.dur). */
+  var IDLE_MS = 60000;
+  var activeAccumMs = 0;
+  var lastTickAt = 0;
+  var lastInputAt = 0;
+
+  function foldActive() {
+    var now = Date.now();
+    var horizon = Math.min(now, lastInputAt + IDLE_MS);
+    if (horizon > lastTickAt) {
+      activeAccumMs += horizon - lastTickAt;
+      lastTickAt = horizon;
+    }
+    if (lastTickAt < now && lastInputAt + IDLE_MS <= lastTickAt) {
+      lastTickAt = now; // clock is paused; never backfill the idle gap
+    }
+  }
+  function activeSeconds() {
+    foldActive();
+    return activeAccumMs / 1000;
+  }
+  function noteInput() { lastInputAt = Date.now(); }
+
+  function sendSessionEnd() {
+    if (endSent) return;
+    endSent = true;
+    send('session_end', { dur: buckets.duration(activeSeconds()) });
+  }
+
+  /* Hesitation timing (2026-11-08): how long a player pauses at a
+   * registered decision point, as a confusion proxy. Usage:
+   *   var h = TC.decision('filing_prompt');  // surface actionable
+   *   h.commit();                            // player committed
+   *   h.abandon();                           // closed unchosen
+   * The pause runs on the ACTIVE-time clock (activeSeconds), the
+   * same clock session durations use: it starts when the surface
+   * becomes actionable and stops accumulating 60 s after the last
+   * input, so an abandoned tab cannot inflate it; the band is all
+   * that ever leaves the device. One open pause per point: calling
+   * decision() again for a point already open returns the open
+   * handle. commit/abandon are idempotent, and a point the game
+   * never registered in schema.js DECISION_POINTS is refused here
+   * (and would be rejected by the Worker anyway). Fully guarded,
+   * like everything in this file: hesitation plumbing can never
+   * throw into a game. */
+  var openPauses = {}; // point id -> { start: activeSeconds, done: bool }
+  function decision(point) {
+    var handle = {
+      commit: function () { finishPause(point, 'chosen'); },
+      abandon: function () { finishPause(point, 'abandoned'); }
+    };
+    try {
+      if (!cfg || typeof TC_SCHEMA === 'undefined') return handle;
+      var points = (TC_SCHEMA.DECISION_POINTS || {})[cfg.game];
+      if (!points || points.indexOf(point) < 0) return handle;
+      if (!openPauses[point] || openPauses[point].done) {
+        openPauses[point] = { start: activeSeconds(), done: false };
+      }
+    } catch (e) { /* never throw into the game */ }
+    return handle;
+  }
+  function finishPause(point, outcome) {
+    try {
+      var open = openPauses[point];
+      if (!open || open.done) return;
+      open.done = true;
+      var secs = Math.max(0, activeSeconds() - open.start);
+      send('decision_pause', { point: point, band: buckets.pause(secs), outcome: outcome });
+    } catch (e) { /* never throw into the game */ }
+  }
+
+  function init(config) {
+    try {
+      cfg = {
+        game: config.game,
+        build: config.build,
+        demo: !!config.demo,
+        /* Host: an explicit init {host} wins; otherwise derive from
+         * this page's hostname. Null means the envelope omits the
+         * key (schema's documented unknown case). */
+        host: config.host != null ? config.host : detectHost(),
+        /* Probe marker: init {probe:true}, or a harness sets
+         * window.TC_TELEMETRY_PROBE before the page's scripts run
+         * (the same evaluateOnNewDocument pattern the endpoint
+         * override uses). */
+        probe: !!config.probe ||
+               (typeof window !== 'undefined' && window.TC_TELEMETRY_PROBE === true),
+        endpoint: (typeof window !== 'undefined' && window.TC_TELEMETRY_ENDPOINT != null)
+                  ? window.TC_TELEMETRY_ENDPOINT
+                  : (config.endpoint != null ? config.endpoint : DEFAULT_ENDPOINT)
+      };
+      sessionId = newSessionId();
+      startedAt = Date.now();
+      endSent = false;
+      if (!enabled()) return;
+      activeAccumMs = 0;
+      lastTickAt = startedAt;
+      lastInputAt = startedAt;
+      var inputEvents = ['pointerdown', 'keydown', 'touchstart', 'wheel'];
+      for (var i = 0; i < inputEvents.length; i++) {
+        window.addEventListener(inputEvents[i], noteInput, { passive: true });
+      }
+      if (typeof setInterval === 'function') setInterval(foldActive, 1000);
+      window.addEventListener('pagehide', sendSessionEnd);
+      window.addEventListener('beforeunload', sendSessionEnd);
+      send('session_start', {}, collectCtx());
+    } catch (e) { cfg = null; }
+  }
+
+  window.TC = {
+    init: init,
+    send: send,
+    decision: decision,
+    optedOut: optedOut,
+    setOptOut: setOptOut,
+    activeSeconds: activeSeconds,
+    buckets: buckets
+  };
+})();
+/*TELEMETRY-END*/
+
+</script>
+<script>
+/* The Outgoing Log — logic core: script, state machine, ending resolver.
+ * Pure and DOM-free so the Node test suite can drive whole playthroughs.
+ * UMD: module.exports in Node, window.OL in the browser.
+ *
+ * Player-facing text rules (studio public-voice checklist): no em-dashes,
+ * contractions welcome, plain words, no AI tells. The test suite greps
+ * every string below against the banned list.
+ */
+(function (root, factory) {
+  var api = factory();
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+  root.OL = api;
+})(typeof self !== 'undefined' ? self : this, function () {
+  'use strict';
+
+  /* ---------------- documents on the desk ---------------- */
+
+  var DOCUMENTS = {
+    daylog: {
+      title: 'The day log',
+      keeper: 'Written by Anselm Rook, day keeper, in his own hand.',
+      lines: [
+        '18:40. Fog coming in off the water, thick. Took the lamp down to the gate.',
+        'No fog bell rung before the crossing. Gate opened on my own judgment.',
+        'The courier Pell asked to cross with the mail cart and took the risk on his own head. Gate opened for him, cart away over the causeway.',
+        '20:15. The courier\'s horse came back alone, harness on, traces cut. No sign of the cart. No sign of the boy.',
+        'Fog still down at shift\'s end. Night keeper to write the outgoing log for the auditors at dawn.'
+      ]
+    },
+    weather: {
+      title: 'The weather note',
+      keeper: 'Pinned by the door, in the watch officer\'s hand, times by the gate clock.',
+      lines: [
+        'Fog sighted off the north water, 18:20.',
+        'Fog on the causeway, 18:40. Causeway closed to carts from this hour by the standing rule.',
+        'Wind none. Tide turning at 21:00, low water at 03:10.',
+        'Fog expected to hold until near dawn.'
+      ]
+    },
+    tally: {
+      title: 'The tally sheet',
+      keeper: 'The gate tally, kept by whoever works the gate. Every opening gets a mark.',
+      lines: [
+        'Tuesday, the night before last: carts over, 3. Log entries for Tuesday crossings: 2.',
+        'Today: gate opened 19:05, one cart, mail. Horse returned alone 20:15.',
+        'No other openings today. The gate has not moved since.'
+      ]
+    }
+  };
+
+  /* ---------------- the script ----------------
+   * Node types: lines | desk | choice | gate | write | ending.
+   * Choice options: kind 'ask' stays in the node and can be asked once;
+   * kind 'go' leaves the node. 'requires' names a flag the player must
+   * hold. 'sets' lists flags the option grants. 'lines' are spoken back
+   * before the node re-offers or moves on. */
+
+  var NODES = {
+
+    title: {
+      type: 'lines', next: 'desk',
+      lines: [
+        { who: 'narr', text: 'Kestrel Gate, on the north road out of the Reach. One gate, one causeway, one rule: no crossing after the fog bell, until the fog lifts.' },
+        { who: 'narr', text: 'This afternoon the fog came in early. The day keeper opened the gate anyway and let a courier cross with the mail cart. The horse came back alone.' },
+        { who: 'narr', text: 'The auditors come at dawn. They want the outgoing log, written by the night keeper. That is you. What you write decides who carries it.' },
+        { who: 'narr', text: 'One night. About twenty minutes. Everything you need is on the desk or at the gate.' }
+      ]
+    },
+
+    desk: {
+      type: 'desk', next: 'w1_intro',
+      intro: [
+        { who: 'narr', text: 'The gatehouse is warm and smells of lamp oil. On the desk: the day log, a weather note, and the tally sheet.' },
+        { who: 'narr', text: 'A keeper reads before he does anything else. Read the day log first. The other two will still be here all night, and you can come back to any of them whenever you like.' }
+      ]
+    },
+
+    w1_intro: {
+      type: 'lines', next: 'w1_maren',
+      lines: [
+        { who: 'narr', text: '22:00. The first watch. Fog presses at the window like something patient.' },
+        { who: 'narr', text: 'A knock at the gate. Not the big knock of a carter. Smaller, and fast, and it does not stop until you open the door.' }
+      ]
+    },
+
+    w1_maren: {
+      type: 'choice', next: 'w1_gate',
+      intro: [
+        { who: 'narr', text: 'A young woman stands in the fog with a lantern and no coat. Maren, the courier\'s sister. Half the Reach knows her by sight.' },
+        { who: 'maren', text: 'You are the night keeper. They said the night keeper would know. My brother went over this afternoon and his horse came back without him.' },
+        { who: 'narr', text: 'A keeper learns what the log leaves out by asking. Ask her what you need to know.' }
+      ],
+      options: [
+        {
+          id: 'maren_pell', kind: 'ask', label: 'Ask about Pell',
+          sets: ['heard_maren'],
+          lines: [
+            { who: 'maren', text: 'Pell is nineteen. He has run the mail since he was fifteen and he is careful, whatever the day log says. He is afraid of that causeway in fog. All the couriers are. You can hear the water under it and you cannot see your own horse\'s head.' },
+            { who: 'maren', text: 'He would not ask to cross in fog. I am telling you that first because the log will tell you different, and the log is wrong.' }
+          ]
+        },
+        {
+          id: 'maren_debt', kind: 'ask', label: 'Ask about the debt',
+          sets: ['heard_debt'],
+          lines: [
+            { who: 'maren', text: 'He owes Vane money. Cards, if you can believe it, a boy who never had two coins to knock together. Vane has been patient about it in the way that costs more later.' },
+            { who: 'maren', text: 'Today\'s run carried a bonus. Far-side delivery before dark pays double. It would have cleared him. I told him the fog would take the bonus and maybe him with it. He said Vane\'s patience was worse than fog.' }
+          ]
+        },
+        {
+          id: 'maren_horse', kind: 'ask', label: 'Ask about the horse',
+          sets: ['heard_horse'],
+          lines: [
+            { who: 'maren', text: 'The horse came back with its harness on and the traces cut clean. A horse does not cut its own traces, keeper.' },
+            { who: 'maren', text: 'Either the cart went over and Pell cut her free so she would not go with it, or somebody else held a knife out there. I know which one I can live with. I am going to find out which one is true.' }
+          ]
+        },
+        { id: 'maren_done', kind: 'go', label: 'Take her to the gate', lines: [] }
+      ]
+    },
+
+    w1_gate: {
+      type: 'gate', gate: 'maren', next: 'w2_intro',
+      intro: [
+        { who: 'maren', text: 'Let me over. I know the causeway stones by count and I have a lantern. If he is out there in the mud he is waiting for somebody, and it should be me.' },
+        { who: 'narr', text: 'The rule says no crossing while the fog is down. The rule is why you have a gate. But a gate keeper decides, and a decision cuts both ways: open it, and the fog gets a second chance at her. Bar it, and whatever is out there waits alone till dawn.' }
+      ],
+      options: [
+        {
+          id: 'maren_open', label: 'Open the gate for her',
+          lines: [
+            { who: 'narr', text: 'You lift the bar and swing the gate wide. She is gone into the fog before the gate has stopped moving, lantern first, counting the stones out loud like a prayer.' },
+            { who: 'narr', text: 'You write nothing down. Some things the night keeps to itself. You hope the fog is finished taking things.' }
+          ]
+        },
+        {
+          id: 'maren_bar', label: 'Bar the gate and keep her in',
+          lines: [
+            { who: 'maren', text: 'You would keep me here while he is out there? In the warm, with the lamp?' },
+            { who: 'narr', text: 'You put her in the porch with a blanket and tea she does not drink. She sits facing the door all the same. The fog keeps its side of the bargain. So do you. It does not feel like keeping anyone safe.' }
+          ]
+        }
+      ]
+    },
+
+    w2_intro: {
+      type: 'lines', next: 'w2_sella',
+      lines: [
+        { who: 'narr', text: '23:30. The second watch. The fog bell hangs in its tower up the hill, and the woman who rings it comes down the path with her own lantern, unhurried, the way people walk when they know every stone.' }
+      ]
+    },
+
+    w2_sella: {
+      type: 'choice', next: 'w3_intro',
+      intro: [
+        { who: 'sella', text: 'Keeper. I am Sella Wray. I ring the fog bell, and I keep the bell book, and I have come down before the auditors come up, because I have read what Rook wrote about my bell.' },
+        { who: 'sella', text: 'Ask me straight and I will answer straight. It is more than the log did.' }
+      ],
+      options: [
+        {
+          id: 'sella_bell', kind: 'ask', label: 'Ask about the ringing',
+          sets: ['heard_sella'],
+          lines: [
+            { who: 'sella', text: 'I rang at a quarter to seven, when the fog came onto the causeway. I rang again at seven, because I saw Rook\'s lamp go down to the gate and I wanted his ears full of it while he decided.' },
+            { who: 'sella', text: 'Both rings are in the bell book with the times, in ink, written as I did them. Rook wrote that no bell was rung. One of us is lying in a book, keeper, and it is not the one who came down the hill to say so.' }
+          ]
+        },
+        {
+          id: 'sella_rook', kind: 'ask', label: 'Ask about Rook',
+          sets: ['sella_rook'],
+          lines: [
+            { who: 'sella', text: 'Anselm Rook is not a bad man, which is the trouble with him. Last spring he asked me to leave a late crossing out of the bell book, a friend of his, a cart that came over after the ring. I told him the book is the book.' },
+            { who: 'sella', text: 'He did not hold it against me. He just stopped asking me, and started writing around me instead. Today he wrote around my bell altogether.' }
+          ]
+        },
+        {
+          id: 'sella_causeway', kind: 'ask', label: 'Ask what the fog does out there',
+          sets: ['sella_causeway'],
+          lines: [
+            { who: 'sella', text: 'The causeway floods at the far end first, by the broken rail. A cart that leaves the stones there goes into the mud and the tide does the rest. If the boy got that far, the cart is in the mud and he cut the horse free to save her.' },
+            { who: 'sella', text: 'If he did not get that far, then he turned back into the fog and the fog kept him. I have rung for this road forty years. The fog does not give back what it takes in the same shape it took it.' }
+          ]
+        },
+        {
+          id: 'sella_done', kind: 'go', label: 'Walk her back to the door',
+          lines: [
+            { who: 'sella', text: 'Write what you heard, keeper. That is all a log is. It is only hard when you heard two things.' }
+          ]
+        }
+      ]
+    },
+
+    w3_intro: {
+      type: 'lines', next: 'w3_vane',
+      lines: [
+        { who: 'narr', text: '01:00. The third watch. A cart lamp out in the fog, swaying, and a man\'s voice calling the gate by name, friendly as you like.' }
+      ]
+    },
+
+    w3_vane: {
+      type: 'choice', next: 'w3_gate',
+      intro: [
+        { who: 'vane', text: 'Keeper. Vane, with a cart for the far side, wool and lamp oil, all lawful. I heard about the boy. Terrible. Terrible. Now, my cart pays by the far side, same as his did, so let us not waste the night.' },
+        { who: 'narr', text: 'He smiles like a man doing you a favor by arriving. Ask him what you need. Watch what he does with his hands when you do.' }
+      ],
+      options: [
+        {
+          id: 'vane_debt', kind: 'ask', label: 'Ask about Pell\'s debt',
+          sets: ['heard_vane'],
+          lines: [
+            { who: 'vane', text: 'The boy owed me, yes. I carried him longer than most would. Cards. They all owe for cards in the end.' },
+            { who: 'vane', text: 'But hear me, keeper. Today\'s bonus would have cleared him whole. He knew it. He begged Rook for that gate, begged like a man who could see the far side of his troubles. Whatever Rook wrote about the asking, that much is gospel.' }
+          ]
+        },
+        {
+          id: 'vane_pell', kind: 'ask', label: 'Ask when he last saw Pell',
+          sets: ['vane_pell'],
+          lines: [
+            { who: 'vane', text: 'At the gate, this afternoon, same as everyone. He had the mail cart loaded and the bonus on his mind. I told him, I said, boy, the fog pays nobody. He laughed at me.' },
+            { who: 'vane', text: 'He is not laughing now, wherever he is. Ask Rook about the rest of it. Rook is the one who opened the gate. I only ever held the paper on a card debt.' }
+          ]
+        },
+        {
+          id: 'vane_tally', kind: 'ask', label: 'Ask about the night before last',
+          requires: 'read_tally', sets: ['vane_confronted'],
+          lines: [
+            { who: 'narr', text: 'His hands stop moving. That is the whole answer, and he knows you saw it.' },
+            { who: 'vane', text: 'The tally sheet. Yes. Rook keeps a tidy sheet, I will give him that. One cart, keeper, one time, and a consideration paid for the quiet of it. These things are done between keepers and carters since before you had the coat.' },
+            { who: 'vane', text: 'I am not confessing to your book. I am telling you the road runs on favors, and a log that says so will make enemies of everyone who keeps it running. Write what you like. Write it knowing that.' }
+          ]
+        },
+        {
+          id: 'vane_done', kind: 'go', label: 'Take him to the gate',
+          lines: [
+            { who: 'vane', text: 'Well? The fog is not getting younger, and neither is my wool.' }
+          ]
+        }
+      ]
+    },
+
+    w3_gate: {
+      type: 'gate', gate: 'vane', next: 'w4_intro',
+      intro: [
+        { who: 'narr', text: 'His cart stands loaded in the fog, horse stamping. The rule is the same rule it was at the first watch. The man is not the same man.' }
+      ],
+      options: [
+        {
+          id: 'vane_open', label: 'Open the gate for the cart',
+          lines: [
+            { who: 'narr', text: 'You swing the gate and he is through and gone, lamp swaying down the stones, whistling. The fog takes the sound first, then the light.' },
+            { who: 'narr', text: 'Whatever he knows about Tuesday night is on the far side of the water now, and the auditors will find an empty yard and a keeper who let him go.' }
+          ]
+        },
+        {
+          id: 'vane_bar', label: 'Bar the gate and keep the cart in the yard',
+          lines: [
+            { who: 'vane', text: 'You are making an enemy over a rule, keeper.' },
+            { who: 'narr', text: 'You bar the gate and tell him the yard is dry and the stable is open. He unhitches with great care and does not speak again. He will be here at dawn, in the yard, where the auditors can see him. So will his cart.' }
+          ]
+        }
+      ]
+    },
+
+    w4_intro: {
+      type: 'lines', next: 'w4_rook',
+      lines: [
+        { who: 'narr', text: '02:30. The fourth watch. A figure comes down the hill path from the keepers\' cottages, no lantern, walking the dark he knows by heart.' },
+        { who: 'narr', text: 'Anselm Rook. The day keeper. The man whose hand wrote the log on your desk.' }
+      ]
+    },
+
+    w4_rook: {
+      type: 'choice', next: 'w5_intro',
+      intro: [
+        { who: 'rook', text: 'Could not sleep. Kept seeing the horse come up the road. You have read my log, then. It is all in the log, keeper. I wrote it plain.' },
+        { who: 'narr', text: 'You have heard a night full of people. Lay what you have in front of him, one thing at a time, and watch the story move.' }
+      ],
+      options: [
+        {
+          id: 'rook_boy', kind: 'ask', label: 'Ask about Pell',
+          sets: ['rook_boy'],
+          lines: [
+            { who: 'rook', text: 'I have known that boy since he was small enough to ride the mail bags. His mother brought soup to this gatehouse when my wife died. You think I opened that gate lightly?' },
+            { who: 'rook', text: 'Whatever you write tomorrow, write that I knew him. The auditors will think I opened it for a stranger\'s coin. I opened it for Pell. That is the whole shame of it.' }
+          ]
+        },
+        {
+          id: 'rook_bell', kind: 'ask', label: 'Put Sella\'s account to him',
+          requires: 'heard_sella', sets: ['rook_admits_bell'],
+          lines: [
+            { who: 'narr', text: 'You tell him: the bell book says two rings, a quarter to seven and seven, in ink, written as she rang them. He looks at the desk for a long time.' },
+            { who: 'rook', text: 'The first one, I will swear I never heard. The wind, the lamp, I do not know. The second one...' },
+            { who: 'rook', text: 'I heard the second one. God help me. I was standing at the gate with my hand on the bar and I heard it, and the boy was looking at me, and I lifted the bar anyway. Write that I am a liar in my own log before you write that I am deaf. At least the lying was mine.' }
+          ]
+        },
+        {
+          id: 'rook_asking', kind: 'ask', label: 'Put the asking to him',
+          requires: 'rook_admits_bell', sets: ['rook_admits_asking'],
+          lines: [
+            { who: 'rook', text: 'You wrote that he took the risk on his own head. His sister says he was afraid of the causeway. Vane says he begged. Which is it, Anselm?' },
+            { who: 'rook', text: 'He begged. That is the worst of it and I have been carrying it since the horse came back. He begged me, keeper to courier, boy I have known since he was small, and I said yes, and then I wrote that he took the risk on himself, as if a begged-for yes is the same as a choice.' },
+            { who: 'rook', text: 'It is not the same. I knew it when I wrote it. A man who begs is asking you to carry it with him. I carried it as far as the gate and then I put it all on him, in ink.' }
+          ]
+        },
+        {
+          id: 'rook_cart', kind: 'ask', label: 'Put the tally sheet to him',
+          requires: 'rook_admits_asking', sets: ['rook_admits_cart'],
+          lines: [
+            { who: 'narr', text: 'You lay the tally sheet on the desk. Three carts Tuesday. Two entries in the log. You do not say a word.' },
+            { who: 'rook', text: 'Vane paid me. Not for Pell, never for Pell, I would cut my hand off first. Tuesday night, his cart, no entry, money in my coat. It was not the first time I have been paid for quiet, but it was the first time I hated the coat.' },
+            { who: 'rook', text: 'When the auditors read that sheet they will hang Tuesday and today on the same nail, and they will not be wrong to. Write it how it was. I am done writing around things.' }
+          ]
+        },
+        {
+          id: 'rook_done', kind: 'go', label: 'Send him back up the hill',
+          lines: [
+            { who: 'rook', text: 'Whatever you write, write it as if he could read it. That is where I went wrong. I wrote mine as if only the auditors would.' }
+          ]
+        }
+      ]
+    },
+
+    w5_intro: {
+      type: 'lines', next: 'w5_runner',
+      lines: [
+        { who: 'narr', text: '04:00. The last watch. Boots on the causeway stones, young and quick, and a clerk\'s satchel banging at a hip. The auditors send their runner ahead of them, the way weather sends a first cold gust.' }
+      ]
+    },
+
+    w5_runner: {
+      type: 'choice', next: 'dawn_intro',
+      intro: [
+        { who: 'wick', text: 'Wick, clerk to the auditors. I ride ahead with the questions so the log can answer them standing up, as my master says. Three questions, keeper, the same three the whole Reach is asking.' },
+        { who: 'wick', text: 'You can answer me now, or the log can answer at dawn. The log is the one they keep. And a word between us: my masters read tally sheets too. They always read the tally sheet.' },
+        { who: 'narr', text: 'Whatever you write is what the record says. That is the whole of your job tonight, and it is nearly dawn.' }
+      ],
+      options: [
+        {
+          id: 'wick_bell', kind: 'ask', label: 'Hear the first question: the bell',
+          sets: ['wick_bell'],
+          lines: [
+            { who: 'wick', text: 'First. Was the fog bell rung before the crossing, or was it not? The day log says not. The bell keeper has a book that says twice. The auditors will ask which book the outgoing log stands behind.' }
+          ]
+        },
+        {
+          id: 'wick_asking', kind: 'ask', label: 'Hear the second question: the asking',
+          sets: ['wick_asking'],
+          lines: [
+            { who: 'wick', text: 'Second. Did the courier ask to cross, or was he sent? A boy who asks is one kind of dead, if he is dead. A boy who was sent is another. The auditors are particular about the difference, and so is his sister.' }
+          ]
+        },
+        {
+          id: 'wick_cart', kind: 'ask', label: 'Hear the third question: the tally',
+          sets: ['wick_cart'],
+          lines: [
+            { who: 'wick', text: 'Third. The tally counts a crossing the log does not name, the night before last. The auditors will want the outgoing log to name it, or to explain it, or to be caught leaving it out. Those are the three shapes it can take, keeper. I have seen all three.' }
+          ]
+        },
+        {
+          id: 'wick_done', kind: 'go', label: 'Give him tea and wait for the light',
+          lines: [
+            { who: 'wick', text: 'Then I will sit by your stove, keeper, and we will watch the fog decide what kind of morning it wants to be.' }
+          ]
+        }
+      ]
+    },
+
+    dawn_intro: {
+      type: 'lines', next: 'write',
+      lines: [
+        { who: 'narr', text: '05:30. The fog is thinning at the edges. Somewhere up the hill a door closes: the auditors, on their way down.' },
+        { who: 'narr', text: 'The outgoing log lies open on the desk. Three entries are yours to write: the bell, the asking, and the cart the log never named. You can only write an account you actually hold, from the desk or from the night. Choose what the record says.' }
+      ]
+    },
+
+    write: { type: 'write', next: 'ending' },
+    ending: { type: 'ending' }
+  };
+
+  var ORDER = ['title', 'desk', 'w1_intro', 'w1_maren', 'w1_gate',
+    'w2_intro', 'w2_sella', 'w3_intro', 'w3_vane', 'w3_gate', 'w4_intro',
+    'w4_rook', 'w5_intro', 'w5_runner', 'dawn_intro', 'write', 'ending'];
+
+  /* ---------------- the dawn writing ---------------- */
+
+  var WRITE_POINTS = [
+    {
+      id: 'bell', title: 'First entry: the bell',
+      prompt: 'What does the outgoing log say about the fog bell?',
+      options: [
+        { id: 'bell_rung_sella', stance: 'rung', requires: 'heard_sella', source: 'Sella\'s account, and her bell book',
+          label: 'The bell was rung, twice, in good time',
+          logLine: 'The fog bell was rung twice before the crossing, at a quarter to seven and at seven, and the times stand in the bell book.' },
+        { id: 'bell_rung_admission', stance: 'rung', requires: 'rook_admits_bell', source: 'Rook\'s own admission, given in the night',
+          label: 'The bell was rung, and the day keeper heard it',
+          logLine: 'The fog bell was rung twice. The day keeper heard the second ring with his hand on the bar, and opened the gate anyway.' },
+        { id: 'bell_notrung', stance: 'not-rung', source: 'The day log, as Rook wrote it',
+          label: 'No fog bell was rung before the crossing',
+          logLine: 'No fog bell was rung before the crossing. The gate was opened on the day keeper\'s own judgment.' },
+        { id: 'bell_open', stance: 'open', source: 'Your own hand',
+          label: 'The record does not settle whether the bell was rung',
+          logLine: 'The record does not settle whether the fog bell was rung. The bell book and the day log disagree, and this log will not choose between them.' }
+      ]
+    },
+    {
+      id: 'asking', title: 'Second entry: the asking',
+      prompt: 'What does the outgoing log say about how Pell came to cross?',
+      options: [
+        { id: 'ask_begged', stance: 'asked', requires: 'rook_admits_asking', source: 'Rook\'s own admission, given in the night',
+          label: 'He begged to cross, and the keeper said yes',
+          logLine: 'The courier begged to cross, for the bonus that would have cleared his debt, and the day keeper said yes. A begged-for yes is not the same as a choice, and this log will not call it one.' },
+        { id: 'ask_asked_log', stance: 'asked', source: 'The day log, as Rook wrote it',
+          label: 'He asked to cross and took the risk on himself',
+          logLine: 'The courier asked to cross with the mail cart and took the risk on his own head.' },
+        { id: 'ask_asked_vane', stance: 'asked', requires: 'heard_vane', source: 'Vane\'s account, at the gate',
+          label: 'He begged to cross, for the bonus',
+          logLine: 'The courier begged to cross. The run carried a bonus that would have cleared his debt to the carter Vane, and he wanted it badly enough to ask in fog.' },
+        { id: 'ask_notasked', stance: 'not-asked', requires: 'heard_maren', source: 'Maren\'s account, at the gate',
+          label: 'He did not ask. He was afraid of the causeway',
+          logLine: 'The courier did not ask to cross. He was afraid of the causeway in fog, as all the couriers are, and this log finds no asking in him.' },
+        { id: 'ask_open', stance: 'open', source: 'Your own hand',
+          label: 'The record does not settle the asking',
+          logLine: 'The record does not settle whether the courier asked to cross. The accounts disagree, and this log will not choose between them.' }
+      ]
+    },
+    {
+      id: 'cart', title: 'Third entry: the unlogged cart',
+      prompt: 'The tally counts a crossing the day log never named. What does the outgoing log say?',
+      options: [
+        { id: 'cart_favor_tally', stance: 'favor', requires: 'read_tally', source: 'The tally sheet, on your desk',
+          label: 'A cart crossed unlogged, a favor by the day keeper',
+          logLine: 'On Tuesday night a cart crossed with no entry in the log, a favor by the day keeper to the carter Vane. The tally sheet counts it even though the log does not.' },
+        { id: 'cart_favor_admission', stance: 'favor', requires: 'rook_admits_cart', source: 'Rook\'s own admission, given in the night',
+          label: 'The day keeper took money for an unlogged crossing',
+          logLine: 'On Tuesday night the day keeper took money from the carter Vane for a crossing he did not log. He admitted it in this gatehouse, in the night, to the keeper writing this.' },
+        { id: 'cart_mistake', stance: 'mistake', source: 'A kind reading of the sheet',
+          label: 'The tally count is a keeper\'s error',
+          logLine: 'The tally count for Tuesday is a keeper\'s error in the marking. No cart crossed unlogged.' },
+        { id: 'cart_omit', stance: 'omitted', source: 'Your own hand',
+          label: 'Leave it out of the log',
+          logLine: null },
+        { id: 'cart_open', stance: 'open', requires: 'read_tally', source: 'Your own hand',
+          label: 'The record does not settle the unlogged crossing',
+          logLine: 'The tally counts a crossing the log does not name. This log cannot settle it and says so.' }
+      ]
+    }
+  ];
+
+  /* ---------------- endings ---------------- */
+
+  var ENDINGS = {
+    'gate-closed': {
+      title: 'THE GATE CLOSES',
+      body: [
+        'The auditors read the outgoing log at your desk, and then they read the tally sheet, the way Wick said they would. It took them less than a minute to find Tuesday.',
+        'A log that backs the day keeper on the bell and says nothing about the cart is not a mistake. They have a word for it, and the word ends the gate. The bar comes off its hinges that same week. The causeway keeps its fog and loses its keeper, and carts go the long way round the headland until someone in an office decides the Reach can be trusted again.',
+        'Rook is struck off beside you. Whatever you meant to protect, the sheet protected nobody. It only chose the ground you both fell on.'
+      ]
+    },
+    'rook-carries-it': {
+      title: 'ROOK CARRIES IT',
+      body: [
+        'The auditors read the log twice. The second time, one of them walks up the hill to the bell tower and comes back with Sella\'s book under his arm, and the two books agree with yours and not with Rook\'s.',
+        'Rook is struck from the gate service before noon. He hands in the day coat at your desk and does not argue. At the door he says the log was the first true thing written about him in years, and that he wrote half of it himself, in the night, out loud. Then he walks up the hill to tell Pell\'s mother before the office can.',
+        'You keep the gate. The bell rings out over the causeway that evening, on time, and the sound carries a long way in the clear air.'
+      ]
+    },
+    'pell-named': {
+      title: 'THE BOY CARRIES IT',
+      body: [
+        'The auditors are pleased with the log. It is tidy. The bell was not rung, the boy asked, the boy took the risk on his own head. A closed account, signed by the night.',
+        'Rook keeps the day gate. Sella keeps her bell, though the log has marked her book as the one that was wrong, and she knows it, and she will ring over this road for years with that written under her name. And Pell, wherever the fog has him, carries the whole of it, because a missing boy cannot hand any of it back.',
+        'You keep the gate too. Some nights the fog comes in and you hear a horse on the stones that is not there, and you get up and check the bar, and the bar is fine, and that is the size of the rest of your life at this gate.'
+      ]
+    },
+    'sella-named': {
+      title: 'SELLA CARRIES IT',
+      body: [
+        'The log says no bell was rung, and the auditors believe the log, because the log is what they came for. The bell book is taken as a keeper\'s fancy. Sella Wray is struck from the bell post she has held for forty years.',
+        'She comes down the hill one last time to give you the tower key. She does not rail. She says a bell is only a rope and a weight of iron, and a book is only as good as the next book believes it is. Then she goes up to her cottage, and the hill is quieter than it has any right to be.',
+        'Rook keeps the day gate. He does not meet your eye at the change of shift, either of you, ever again. The fog bell rings the next night, rung by a boy from the village who is still learning where the rope is.'
+      ]
+    },
+    'record-stays-open': {
+      title: 'THE RECORD STAYS OPEN',
+      body: [
+        'The auditors read the log and find a careful document that settles less than they hoped. They are not angry. They are worse than angry: they take the day log, the tally sheet, the bell book, and your outgoing log away in a satchel, and the inquiry goes to the office, where it will be settled by people who were not in the fog.',
+        'Rook keeps the gate on sufferance. Sella keeps her bell. Nobody is struck off and nobody is cleared, and Pell\'s name stays in the open file, which is the office\'s way of saying a thing is not finished with anyone yet.',
+        'You keep the night. It is not the worst ending a log can have. It is only the one where the writing stops being yours.'
+      ]
+    }
+  };
+
+  function resolveEnding(state) {
+    var bell = state.log.bell && state.log.bell.stance;
+    var asking = state.log.asking && state.log.asking.stance;
+    var cart = state.log.cart && state.log.cart.stance;
+    var slug;
+    if (bell === 'not-rung' && cart === 'omitted') slug = 'gate-closed';
+    else if (bell === 'rung' && cart === 'favor') slug = 'rook-carries-it';
+    else if (bell === 'not-rung' && asking === 'asked') slug = 'pell-named';
+    else if (bell === 'not-rung') slug = 'sella-named';
+    else slug = 'record-stays-open';
+
+    var epilogues = [];
+    if (state.gate.maren === 'opened') {
+      epilogues.push('Maren came back over the causeway as the light came up, lantern dead, coat stiff with mud to the knee. She found the cart at the far end, broken against the rail, and Pell\'s scarf caught on the rail above the tide line. No more than that. She stood in your doorway and told you the way a person reports weather, and then she sat down by the stove and did not cry until the auditors had gone.');
+    } else {
+      epilogues.push('Maren waited in the porch all night, facing the door. At dawn she walks the headland road the long way round to look for her brother, because the gate would not open for her and the office has no news it can give her. She does not thank you for keeping her safe. She may never know what to thank you for, or blame you for, and neither do you.');
+    }
+    if (state.gate.vane === 'opened') {
+      epilogues.push('Vane is gone. His cart crossed in the third watch and the far side has him now, and whatever the auditors want to ask him about Tuesday will have to wait for a man who is in no hurry to be asked. Your log names his favor. His absence names the rest.');
+    } else {
+      epilogues.push('Vane is in your yard when the auditors come down, unhitching nothing, standing by his cart with his hat in his hands. They take him into the gatehouse to talk about the tally sheet, and he goes the way a man goes when the paper has already said it all.');
+    }
+
+    var logLines = [];
+    WRITE_POINTS.forEach(function (p) {
+      var choice = state.log[p.id];
+      if (choice && choice.logLine) logLines.push(choice.logLine);
+    });
+
+    return {
+      slug: slug,
+      title: ENDINGS[slug].title,
+      body: ENDINGS[slug].body.slice(),
+      epilogues: epilogues,
+      logLines: logLines
+    };
+  }
+
+  /* ---------------- engine ---------------- */
+
+  function newGame() {
+    return {
+      node: 'title',
+      flags: {},
+      asked: {},          // nodeId -> { optionId: true }
+      gate: {},           // 'maren' | 'vane' -> 'opened' | 'barred'
+      log: {},            // pointId -> chosen write option (with stance/logLine)
+      writeStep: 0,
+      watchesDone: []     // watch numbers completed, for telemetry hooks
+    };
+  }
+
+  function has(state, flag) { return !!state.flags[flag]; }
+
+  function nodeDef(state) { return NODES[state.node]; }
+
+  /* Options currently offered at a choice / gate / desk / write node. */
+  function visibleOptions(state) {
+    var node = nodeDef(state);
+    if (!node) return [];
+    if (node.type === 'desk') {
+      var out = [];
+      Object.keys(DOCUMENTS).forEach(function (key) {
+        out.push({ id: 'doc_' + key, kind: 'doc', label: 'Read ' + DOCUMENTS[key].title.toLowerCase(), doc: key });
+      });
+      if (has(state, 'read_daylog')) {
+        out.push({ id: 'desk_done', kind: 'go', label: 'Blow out the desk lamp and start the first watch', lines: [] });
+      }
+      return out;
+    }
+    if (node.type === 'write') {
+      var point = WRITE_POINTS[state.writeStep];
+      if (!point) return [];
+      return point.options.filter(function (o) {
+        return !o.requires || has(state, o.requires);
+      }).map(function (o) {
+        return { id: o.id, kind: 'write', label: o.label, source: o.source, stance: o.stance, point: point.id };
+      });
+    }
+    if (node.type === 'choice' || node.type === 'gate') {
+      var askedHere = state.asked[state.node] || {};
+      return node.options.filter(function (o) {
+        if (o.kind === 'ask' && askedHere[o.id]) return false;
+        if (o.requires && !has(state, o.requires)) return false;
+        return true;
+      });
+    }
+    return [];
+  }
+
+  /* Read a desk document at any time (the desk node, or the desk bar
+   * during the night). Sets the read flag and returns display lines. */
+  function readDocument(state, docKey) {
+    var d = DOCUMENTS[docKey];
+    if (!d) return null;
+    state.flags['read_' + docKey] = true;
+    var lines = [{ who: 'doc', text: d.title.toUpperCase() + '. ' + d.keeper }];
+    d.lines.forEach(function (l) { lines.push({ who: 'doc', text: l }); });
+    return lines;
+  }
+
+  /* Apply a choice. Returns { lines: [...] } to display, or null if the
+   * option is not currently offered. Mutates state. */
+  function choose(state, optionId) {
+    var node = nodeDef(state);
+    if (!node) return null;
+
+    if (node.type === 'desk') {
+      if (optionId === 'desk_done') {
+        if (!has(state, 'read_daylog')) return null;
+        state.node = node.next;
+        return { lines: [] };
+      }
+      var docKey = optionId.replace(/^doc_/, '');
+      var docLines = readDocument(state, docKey);
+      if (!docLines) return null;
+      return { lines: docLines };
+    }
+
+    if (node.type === 'write') {
+      var point = WRITE_POINTS[state.writeStep];
+      if (!point) return null;
+      var opt = null;
+      point.options.forEach(function (o) { if (o.id === optionId) opt = o; });
+      if (!opt) return null;
+      if (opt.requires && !has(state, opt.requires)) return null;
+      state.log[point.id] = opt;
+      state.writeStep += 1;
+      if (state.writeStep >= WRITE_POINTS.length) {
+        state.node = node.next;
+        return { lines: [], wrote: point.id, endingReady: true };
+      }
+      return { lines: [], wrote: point.id };
+    }
+
+    var options = visibleOptions(state);
+    var chosen = null;
+    options.forEach(function (o) { if (o.id === optionId) chosen = o; });
+    if (!chosen) return null;
+    var def = null;
+    (node.options || []).forEach(function (o) { if (o.id === optionId) def = o; });
+    if (!def) return null;
+
+    if (def.sets) def.sets.forEach(function (f) { state.flags[f] = true; });
+
+    if (node.type === 'gate') {
+      state.gate[node.gate] = (optionId.indexOf('_open') >= 0) ? 'opened' : 'barred';
+      state.node = node.next;
+      return { lines: def.lines || [], gateDecision: { gate: node.gate, choice: state.gate[node.gate] } };
+    }
+
+    if (def.kind === 'ask') {
+      state.asked[state.node] = state.asked[state.node] || {};
+      state.asked[state.node][def.id] = true;
+      return { lines: def.lines || [] };
+    }
+
+    // kind 'go': leaving a watch node completes that watch.
+    var m = /^w(\d)_/.exec(state.node);
+    if (m) state.watchesDone.push(m[1]);
+    state.node = node.next;
+    return { lines: def.lines || [] };
+  }
+
+  /* Advance a 'lines' node. */
+  function advance(state) {
+    var node = nodeDef(state);
+    if (!node || node.type !== 'lines') return false;
+    state.node = node.next;
+    return true;
+  }
+
+  /* Where each core verb is first taught (teaching audit + tests). */
+  var TEACH = { read: 'desk', ask: 'w1_maren', decide: 'w1_gate', write: 'w5_runner' };
+
+  return {
+    DOCUMENTS: DOCUMENTS,
+    NODES: NODES,
+    ORDER: ORDER,
+    WRITE_POINTS: WRITE_POINTS,
+    ENDINGS: ENDINGS,
+    TEACH: TEACH,
+    newGame: newGame,
+    has: has,
+    nodeDef: nodeDef,
+    visibleOptions: visibleOptions,
+    choose: choose,
+    advance: advance,
+    readDocument: readDocument,
+    resolveEnding: resolveEnding
+  };
+});
+
+</script>
+<script>
+/* The Outgoing Log — score engine (WebAudio, synthesized in the page).
+ *
+ * Composition rules (owner's standing music direction): fullness first,
+ * melody in the foreground and singable, plain triads, diatonic, real
+ * low end, NO pitch vibrato anywhere, no plucked-string voices, no
+ * regular ticking figure on top. Warm pad strings use short bow attacks
+ * and detuned saws through a lowpass; the melody is a soft horn blend
+ * (triangle + sine) stated in the mid register.
+ *
+ * One composition definition drives both the live engine and the
+ * offline render used for the listen copy, so what the owner hears in
+ * the copy is what plays in the game.
+ *
+ * API: OLAudio.init() (on a user gesture), .start(), .stop(),
+ * .setVolume(0..1), .getVolume(), .setMood('night'|'dawn'),
+ * .renderOffline(seconds) -> Promise<AudioBuffer> (listen copies).
+ */
+(function (root) {
+  'use strict';
+
+  var BPM = 66;
+  var BEAT = 60 / BPM;          // seconds per quarter note
+  var BAR = BEAT * 4;
+
+  function mf(midi) { return 440 * Math.pow(2, (midi - 69) / 12); }
+
+  /* Chords per bar, 8-bar loop. Pad voicings sit in the mid register;
+   * bass is a sine one octave under the root. Dawn mood changes only
+   * the last bar: C major gives way to D major, and the fog lifts. */
+  var CHORDS_NIGHT = [
+    { pad: [57, 62, 65], bass: 38 },  // Dm
+    { pad: [58, 62, 65], bass: 34 },  // Bb
+    { pad: [57, 60, 65], bass: 41 },  // F
+    { pad: [55, 60, 64], bass: 36 },  // C
+    { pad: [57, 62, 65], bass: 38 },  // Dm
+    { pad: [58, 62, 65], bass: 34 },  // Bb
+    { pad: [57, 60, 65], bass: 41 },  // F
+    { pad: [55, 60, 64], bass: 36 }   // C
+  ];
+  var CHORDS_DAWN = CHORDS_NIGHT.slice();
+  CHORDS_DAWN[7] = { pad: [57, 62, 66], bass: 38 };  // D major
+
+  /* Melody: [bar, beatInBar, midi, beats]. Stated twice per loop; the
+   * second statement answers the first. Plain, singable, repeats. */
+  var MELODY_NIGHT = [
+    [0, 0, 69, 2], [0, 2, 65, 1], [0, 3, 67, 1],
+    [1, 0, 69, 3], [1, 3, 72, 1],
+    [2, 0, 74, 2], [2, 2, 72, 1], [2, 3, 69, 1],
+    [3, 0, 67, 2], [3, 2, 64, 2],
+    [4, 0, 69, 2], [4, 2, 65, 1], [4, 3, 67, 1],
+    [5, 0, 69, 3], [5, 3, 72, 1],
+    [6, 0, 74, 2], [6, 2, 72, 1], [6, 3, 69, 1],
+    [7, 0, 64, 2], [7, 2, 62, 2]
+  ];
+  var MELODY_DAWN = MELODY_NIGHT.slice(0, MELODY_NIGHT.length - 2).concat([
+    [7, 0, 69, 2], [7, 2, 66, 1], [7, 3, 62, 1]
+  ]);
+
+  /* ---- voices (shared by live and offline graphs) ---- */
+
+  function padChord(ctx, dest, chord, t, dur) {
+    var g = ctx.createGain();
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(0.055, t + 0.9);        // bow attack
+    g.gain.setValueAtTime(0.055, t + dur - 0.7);
+    g.gain.linearRampToValueAtTime(0, t + dur + 0.35);
+    var f = ctx.createBiquadFilter();
+    f.type = 'lowpass'; f.frequency.value = 950; f.Q.value = 0.4;
+    g.connect(f); f.connect(dest);
+    chord.pad.forEach(function (m) {
+      [-5, 4].forEach(function (cents) {
+        var o = ctx.createOscillator();
+        o.type = 'sawtooth'; o.frequency.value = mf(m); o.detune.value = cents;
+        o.connect(g); o.start(t); o.stop(t + dur + 0.4);
+      });
+      var sub = ctx.createOscillator();                    // sine body under each note
+      sub.type = 'sine'; sub.frequency.value = mf(m);
+      var sg = ctx.createGain(); sg.gain.value = 0.5;
+      sub.connect(sg); sg.connect(g); sub.start(t); sub.stop(t + dur + 0.4);
+    });
+  }
+
+  function bassNote(ctx, dest, midi, t, dur) {
+    var o = ctx.createOscillator();
+    o.type = 'sine'; o.frequency.value = mf(midi);
+    var g = ctx.createGain();
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(0.16, t + 0.25);
+    g.gain.setValueAtTime(0.16, t + dur - 0.4);
+    g.gain.linearRampToValueAtTime(0, t + dur);
+    o.connect(g); g.connect(dest);
+    o.start(t); o.stop(t + dur + 0.05);
+  }
+
+  function melodyNote(ctx, dest, midi, t, dur) {
+    var g = ctx.createGain();
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(0.11, t + 0.14);        // soft horn attack
+    g.gain.setValueAtTime(0.11, t + Math.max(0.14, dur - 0.22));
+    g.gain.linearRampToValueAtTime(0, t + dur);
+    var f = ctx.createBiquadFilter();
+    f.type = 'lowpass'; f.frequency.value = 2100; f.Q.value = 0.3;
+    g.connect(f); f.connect(dest);
+    var tri = ctx.createOscillator();
+    tri.type = 'triangle'; tri.frequency.value = mf(midi);
+    tri.connect(g); tri.start(t); tri.stop(t + dur + 0.05);
+    var sin = ctx.createOscillator();
+    sin.type = 'sine'; sin.frequency.value = mf(midi);
+    var sg = ctx.createGain(); sg.gain.value = 0.6;
+    sin.connect(sg); sg.connect(g); sin.start(t); sin.stop(t + dur + 0.05);
+  }
+
+  function windBed(ctx, dest, t, dur) {
+    var len = Math.ceil(ctx.sampleRate * 2);
+    var buf = ctx.createBuffer(1, len, ctx.sampleRate);
+    var data = buf.getChannelData(0);
+    var last = 0;
+    for (var i = 0; i < len; i++) {                        // brown-ish noise
+      var white = Math.random() * 2 - 1;
+      last = (last + 0.02 * white) / 1.02;
+      data[i] = last * 3.2;
+    }
+    var src = ctx.createBufferSource();
+    src.buffer = buf; src.loop = true;
+    var f = ctx.createBiquadFilter();
+    f.type = 'lowpass'; f.frequency.value = 420;
+    var g = ctx.createGain(); g.gain.value = 0.035;
+    src.connect(f); f.connect(g); g.connect(dest);
+    src.start(t); src.stop(t + dur);
+  }
+
+  /* Schedule one full 8-bar loop starting at time t. */
+  function scheduleLoop(ctx, dest, t, mood) {
+    var chords = mood === 'dawn' ? CHORDS_DAWN : CHORDS_NIGHT;
+    var melody = mood === 'dawn' ? MELODY_DAWN : MELODY_NIGHT;
+    for (var bar = 0; bar < 8; bar++) {
+      padChord(ctx, dest, chords[bar], t + bar * BAR, BAR);
+      bassNote(ctx, dest, chords[bar].bass, t + bar * BAR, BAR);
+    }
+    melody.forEach(function (n) {
+      melodyNote(ctx, dest, n[2], t + n[0] * BAR + n[1] * BEAT, n[3] * BEAT * 0.96);
+    });
+    windBed(ctx, dest, t, 8 * BAR);
+    return 8 * BAR;
+  }
+
+  /* ---- live engine ---- */
+
+  var VOL_KEY = 'outgoingLogVolume';
+  var live = null;
+
+  function storedVolume() {
+    try {
+      var v = parseFloat(localStorage.getItem(VOL_KEY));
+      if (isFinite(v) && v >= 0 && v <= 1) return v;
+    } catch (e) { /* storage unavailable */ }
+    return 0.5;
+  }
+
+  var api = {
+    volume: storedVolume(),
+    mood: 'night',
+
+    init: function () {
+      if (live) return true;
+      var AC = root.AudioContext || root.webkitAudioContext;
+      if (!AC) return false;
+      var ctx = new AC();
+      var master = ctx.createGain();
+      master.gain.value = api.volume;
+      master.connect(ctx.destination);
+      live = { ctx: ctx, master: master, timer: null, nextAt: 0, started: false };
+      return true;
+    },
+
+    start: function () {
+      if (!live || live.started) return;
+      live.started = true;
+      if (live.ctx.state === 'suspended') live.ctx.resume();
+      live.nextAt = live.ctx.currentTime + 0.1;
+      var tick = function () {
+        while (live.nextAt < live.ctx.currentTime + 0.8) {
+          live.nextAt += scheduleLoop(live.ctx, live.master, live.nextAt, api.mood);
+        }
+      };
+      tick();
+      live.timer = setInterval(tick, 300);
+    },
+
+    stop: function () {
+      if (!live) return;
+      if (live.timer) clearInterval(live.timer);
+      live.started = false;
+      try { live.ctx.close(); } catch (e) { /* already closed */ }
+      live = null;
+    },
+
+    setVolume: function (v) {
+      api.volume = Math.min(1, Math.max(0, v));
+      try { localStorage.setItem(VOL_KEY, String(api.volume)); } catch (e) { /* ignore */ }
+      if (live) live.master.gain.setTargetAtTime(api.volume, live.ctx.currentTime, 0.05);
+    },
+
+    getVolume: function () { return api.volume; },
+
+    setMood: function (m) { api.mood = (m === 'dawn') ? 'dawn' : 'night'; },
+
+    /* Offline render of the same composition (night mood, then the
+     * dawn loop), for listen copies. */
+    renderOffline: function (seconds) {
+      var OC = root.OfflineAudioContext;
+      if (!OC) return Promise.reject(new Error('no OfflineAudioContext'));
+      var sr = 44100;
+      var ctx = new OC(2, Math.ceil(seconds * sr), sr);
+      var master = ctx.createGain();
+      master.gain.value = 0.9;
+      master.connect(ctx.destination);
+      var loopLen = 8 * BAR;
+      var t = 0;
+      var mood = 'night';
+      while (t < seconds - 1) {
+        if (t >= seconds / 2) mood = 'dawn';
+        scheduleLoop(ctx, master, t, mood);
+        t += loopLen;
+      }
+      return ctx.startRendering();
+    }
+  };
+
+  root.OLAudio = api;
+})(typeof self !== 'undefined' ? self : this);
+
+</script>
+<script>
+/* The Outgoing Log — UI driver. Renders the logic engine's state as a
+ * desk: transcript above, choices pinned below (always on screen).
+ * Wires telemetry (vendored bundle, window.TC), the score engine, the
+ * desk-bar document overlay, and the ?demo=1 self-playing mode.
+ */
+(function () {
+  'use strict';
+
+  var BUILD = 'gameoff-2026-1';
+  var DEMO = /[?&]demo=1/.test(location.search);
+
+  var WHO = {
+    narr: '', doc: 'On the desk', maren: 'Maren', sella: 'Sella Wray',
+    vane: 'Vane', rook: 'Anselm Rook', wick: 'Wick, the runner', written: 'You write'
+  };
+  var WATCH_LABEL = {
+    title: 'The desk', desk: 'The desk, before the watches',
+    w1_intro: 'First watch · 22:00', w1_maren: 'First watch · 22:00', w1_gate: 'First watch · 22:00',
+    w2_intro: 'Second watch · 23:30', w2_sella: 'Second watch · 23:30',
+    w3_intro: 'Third watch · 01:00', w3_vane: 'Third watch · 01:00', w3_gate: 'Third watch · 01:00',
+    w4_intro: 'Fourth watch · 02:30', w4_rook: 'Fourth watch · 02:30',
+    w5_intro: 'Last watch · 04:00', w5_runner: 'Last watch · 04:00',
+    dawn_intro: 'Dawn · 05:30', write: 'Dawn · 05:30', ending: 'The outgoing log'
+  };
+  var WATCH_HEAD = {
+    w1_intro: 'First watch · 22:00', w2_intro: 'Second watch · 23:30',
+    w3_intro: 'Third watch · 01:00', w4_intro: 'Fourth watch · 02:30',
+    w5_intro: 'Last watch · 04:00', dawn_intro: 'Dawn · 05:30'
+  };
+
+  var state = OL.newGame();
+  var entered = {};        // nodeId -> true once its intro has been printed
+  var endingShown = false;
+  var decisionHandles = {}; // telemetry decision_pause handles by point
+
+  var el = {
+    transcript: document.getElementById('transcript'),
+    choices: document.getElementById('choices'),
+    watchlabel: document.getElementById('watchlabel'),
+    volume: document.getElementById('volume'),
+    tctoggle: document.getElementById('tctoggle'),
+    overlay: document.getElementById('docoverlay'),
+    doctitle: document.getElementById('doctitle'),
+    docsub: document.getElementById('docsub'),
+    docbody: document.getElementById('docbody')
+  };
+
+  /* ---------------- telemetry ---------------- */
+
+  var TCok = typeof window.TC !== 'undefined';
+  if (TCok) {
+    try { window.TC.init({ game: 'the-outgoing-log', build: BUILD, demo: DEMO }); } catch (e) { TCok = false; }
+  }
+  function tcSend(event, fields) {
+    if (!TCok) return;
+    try { window.TC.send(event, fields || {}); } catch (e) { /* never throw into the game */ }
+  }
+  function tcDecisionStart(point) {
+    if (!TCok || decisionHandles[point]) return;
+    try { decisionHandles[point] = window.TC.decision(point); } catch (e) { /* ignore */ }
+  }
+  function tcDecisionCommit(point) {
+    var h = decisionHandles[point];
+    if (!h) return;
+    decisionHandles[point] = null;
+    try { h.commit(); } catch (e) { /* ignore */ }
+  }
+  if (TCok) {
+    try { el.tctoggle.checked = !window.TC.optedOut(); } catch (e) { /* ignore */ }
+  }
+  el.tctoggle.addEventListener('change', function () {
+    if (!TCok) return;
+    try { window.TC.setOptOut(!el.tctoggle.checked); } catch (e) { /* ignore */ }
+  });
+
+  /* ---------------- audio ---------------- */
+
+  var audioStarted = false;
+  function startAudioOnce() {
+    if (audioStarted) return;
+    audioStarted = true;
+    if (window.OLAudio && OLAudio.init()) OLAudio.start();
+  }
+  document.addEventListener('pointerdown', startAudioOnce);
+  el.volume.value = String(Math.round((window.OLAudio ? OLAudio.getVolume() : 0.5) * 100));
+  el.volume.addEventListener('input', function () {
+    startAudioOnce();
+    if (window.OLAudio) OLAudio.setVolume(parseInt(el.volume.value, 10) / 100);
+  });
+
+  /* ---------------- transcript ---------------- */
+
+  function addLine(line) {
+    var p = document.createElement('p');
+    p.className = 'line ' + line.who;
+    if (line.who !== 'narr' && WHO[line.who]) {
+      var s = document.createElement('span');
+      s.className = 'who'; s.textContent = WHO[line.who];
+      p.appendChild(s);
+    }
+    p.appendChild(document.createTextNode(line.text));
+    el.transcript.appendChild(p);
+  }
+  function addWatchHead(nodeId) {
+    if (!WATCH_HEAD[nodeId]) return;
+    var p = document.createElement('p');
+    p.className = 'line watchhead';
+    p.textContent = WATCH_HEAD[nodeId];
+    el.transcript.appendChild(p);
+  }
+  function scrollStage() {
+    var stage = document.getElementById('stage');
+    stage.scrollTop = stage.scrollHeight;
+  }
+
+  function enterNode() {
+    var id = state.node;
+    if (entered[id]) return;
+    entered[id] = true;
+    var node = OL.nodeDef(state);
+    addWatchHead(id);
+    if (node.intro) node.intro.forEach(addLine);
+    if (node.lines) node.lines.forEach(addLine);
+    if (id === 'dawn_intro' && window.OLAudio) OLAudio.setMood('dawn');
+    if (node.type === 'gate') tcDecisionStart(node.gate === 'maren' ? 'maren_crossing' : 'vane_crossing');
+    if (node.type === 'write') tcDecisionStart('outgoing_log');
+    if (node.type === 'ending') showEnding();
+  }
+
+  function showEnding() {
+    if (endingShown) return;
+    endingShown = true;
+    var end = OL.resolveEnding(state);
+    tcSend('log_written', { ending: end.slug });
+
+    var box = document.createElement('div');
+    box.className = 'logdoc';
+    var h = document.createElement('h3');
+    h.textContent = 'THE OUTGOING LOG, AS WRITTEN';
+    box.appendChild(h);
+    OL.WRITE_POINTS.forEach(function (p) {
+      var chosen = state.log[p.id];
+      var para = document.createElement('p');
+      if (chosen && chosen.stance === 'omitted') {
+        para.className = 'gap';
+        para.textContent = 'Of the third matter, the tally and the cart, this log says nothing at all.';
+      } else if (chosen && chosen.logLine) {
+        para.textContent = chosen.logLine;
+      }
+      box.appendChild(para);
+    });
+    el.transcript.appendChild(box);
+
+    var t = document.createElement('p');
+    t.className = 'line endingtitle';
+    t.textContent = end.title;
+    el.transcript.appendChild(t);
+    end.body.forEach(function (para) { addLine({ who: 'narr', text: para }); });
+    end.epilogues.forEach(function (para) { addLine({ who: 'narr', text: para }); });
+    addLine({ who: 'narr', text: 'The night is over. The log is what remains of it.' });
+  }
+
+  /* ---------------- choices ---------------- */
+
+  function makeButton(opt, cls) {
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'choice ' + (cls || '');
+    b.dataset.opt = opt.id;
+    b.appendChild(document.createTextNode(opt.label));
+    if (opt.source) {
+      var s = document.createElement('span');
+      s.className = 'src';
+      s.textContent = opt.source;
+      b.appendChild(s);
+    }
+    b.addEventListener('click', function () { onChoose(opt.id); });
+    return b;
+  }
+
+  function renderChoices() {
+    el.choices.innerHTML = '';
+    var inner = document.createElement('div');
+    inner.className = 'inner';
+    el.choices.appendChild(inner);
+    var node = OL.nodeDef(state);
+
+    if (node.type === 'ending') {
+      var r = document.createElement('button');
+      r.type = 'button'; r.className = 'choice go'; r.dataset.opt = 'restart';
+      r.textContent = 'Work another night (play again)';
+      r.addEventListener('click', restart);
+      inner.appendChild(r);
+      return;
+    }
+
+    if (node.type === 'lines') {
+      var c = document.createElement('button');
+      c.type = 'button'; c.className = 'choice go'; c.dataset.opt = 'continue';
+      c.textContent = state.node === 'title' ? 'Begin the night shift' : 'Go on';
+      c.addEventListener('click', function () {
+        startAudioOnce();
+        OL.advance(state);
+        afterMove();
+      });
+      inner.appendChild(c);
+      return;
+    }
+
+    if (node.type === 'write') {
+      var point = OL.WRITE_POINTS[state.writeStep];
+      var head = document.createElement('div');
+      head.id = 'writehead';
+      var h2 = document.createElement('h2'); h2.textContent = point.title;
+      var pp = document.createElement('p'); pp.textContent = point.prompt;
+      head.appendChild(h2); head.appendChild(pp);
+      inner.appendChild(head);
+    }
+
+    OL.visibleOptions(state).forEach(function (opt) {
+      var cls = opt.kind === 'go' ? 'go' : (node.type === 'gate' ? 'gate' : (node.type === 'write' ? 'write' : ''));
+      inner.appendChild(makeButton(opt, cls));
+    });
+  }
+
+  function render() {
+    enterNode();
+    el.watchlabel.textContent = WATCH_LABEL[state.node] || '';
+    renderChoices();
+    scrollStage();
+  }
+
+  function afterMove() { render(); }
+
+  function onChoose(optionId) {
+    startAudioOnce();
+    var watchesBefore = state.watchesDone.length;
+    var nodeBefore = state.node;
+    var res = OL.choose(state, optionId);
+    if (!res) return;
+    (res.lines || []).forEach(addLine);
+
+    for (var i = watchesBefore; i < state.watchesDone.length; i++) {
+      tcSend('watch_complete', { watch: state.watchesDone[i] });
+    }
+    if (res.gateDecision) {
+      tcSend('gate_decision', { gate: res.gateDecision.gate, choice: res.gateDecision.choice });
+      tcDecisionCommit(res.gateDecision.gate === 'maren' ? 'maren_crossing' : 'vane_crossing');
+    }
+    if (res.wrote) {
+      var point = OL.WRITE_POINTS.find(function (p) { return p.id === res.wrote; });
+      var chosen = state.log[res.wrote];
+      addLine({ who: 'written', text: chosen.logLine || 'Of this, the log says nothing at all.' });
+      if (point) { /* the entry just written */ }
+    }
+    if (res.endingReady) tcDecisionCommit('outgoing_log');
+    if (state.node !== nodeBefore) { /* node entry lines print in render() */ }
+    render();
+  }
+
+  function restart() {
+    state = OL.newGame();
+    entered = {};
+    endingShown = false;
+    decisionHandles = {};
+    el.transcript.innerHTML = '';
+    if (window.OLAudio) OLAudio.setMood('night');
+    render();
+  }
+
+  /* ---------------- document overlay (desk bar) ---------------- */
+
+  document.querySelectorAll('.deskbtn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var key = btn.dataset.doc;
+      var lines = OL.readDocument(state, key);
+      if (!lines) return;
+      var d = OL.DOCUMENTS[key];
+      el.doctitle.textContent = d.title;
+      el.docsub.textContent = d.keeper;
+      el.docbody.innerHTML = '';
+      d.lines.forEach(function (l) {
+        var p = document.createElement('p');
+        p.textContent = l;
+        el.docbody.appendChild(p);
+      });
+      el.overlay.hidden = false;
+      document.getElementById('docclose').focus();
+    });
+  });
+  document.getElementById('docclose').addEventListener('click', function () {
+    el.overlay.hidden = true;
+  });
+  el.overlay.addEventListener('click', function (ev) {
+    if (ev.target === el.overlay) el.overlay.hidden = true;
+  });
+
+  /* ---------------- demo mode ---------------- */
+
+  if (DEMO) {
+    var demoTimer = setInterval(function () {
+      var node = OL.nodeDef(state);
+      if (node.type === 'ending') { clearInterval(demoTimer); return; }
+      var pick = null;
+      if (node.type === 'lines') {
+        pick = document.querySelector('[data-opt="continue"]');
+      } else if (node.type === 'write') {
+        var want = { bell: 'bell_rung_admission', asking: 'ask_begged', cart: 'cart_favor_admission' }[OL.WRITE_POINTS[state.writeStep].id];
+        pick = document.querySelector('[data-opt="' + want + '"]') || document.querySelector('#choices .choice');
+      } else {
+        var opts = OL.visibleOptions(state);
+        var ask = opts.find(function (o) { return o.kind === 'ask' || o.kind === 'doc'; });
+        if (ask) pick = document.querySelector('[data-opt="' + ask.id + '"]');
+        else if (node.type === 'gate') {
+          var wantGate = state.node === 'w1_gate' ? 'maren_open' : 'vane_bar';
+          pick = document.querySelector('[data-opt="' + wantGate + '"]');
+        } else {
+          var go = opts.find(function (o) { return o.kind === 'go'; });
+          if (go) pick = document.querySelector('[data-opt="' + go.id + '"]');
+        }
+      }
+      if (pick) pick.click();
+    }, 1000);
+  }
+
+  render();
+})();
+
+</script>
+</body>
+</html>

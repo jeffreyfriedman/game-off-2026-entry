@@ -1,0 +1,15 @@
+# local-only artifacts, never shipped
+media-src/listen.wav
+the-outgoing-log-listen.mp3
+*.muse-github-snapshot-sync.json
+dist/index.html.staging
+
+# internal documents: the public jam repo carries game source and build
+# only. These stay in the local folder (force-add at a custody pass if
+# the local history needs them).
+DESIGN.md
+PAGE-KIT.md
+BUILD-REPORT.md
+JURY.md
+TEACHING-AUDIT.md
+jury/
